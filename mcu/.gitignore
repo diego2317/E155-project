@@ -3,3 +3,9 @@
 **/Debug/
 *.emSession
 *.jlink
+
+
+# STM32CubeIDE
+.metadata/
+.settings/
+*.ld
