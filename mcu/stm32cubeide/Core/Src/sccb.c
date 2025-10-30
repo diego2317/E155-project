@@ -1,7 +1,8 @@
 #include "sccb.h"
-#include "stm32l432_hal_i2c.h"   /* replace with your MCU’s HAL, e.g. stm32l4xx_hal_i2c.h */
 
-/* Example: assumes HAL_I2C_HandleTypeDef hi2c1 exists */
+#include "stm32l4xx_hal.h"   /* replace with your MCU’s HAL, e.g. stm32l4xx_hal_i2c.h */
+
+extern I2C_HandleTypeDef hi2c1;
 
 void sccb_init(void)
 {
@@ -14,6 +15,8 @@ void sccb_init(void)
        hi2c1.Init.AddressingMode = I2C_ADDRESSINGMODE_7BIT;
        HAL_I2C_Init(&hi2c1);
     */
+	hi2c1.Instance = I2C1;
+	hi2c1.Init.Timing
 }
 
 /* Single register write */
