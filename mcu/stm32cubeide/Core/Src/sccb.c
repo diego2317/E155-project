@@ -4,21 +4,6 @@
 
 extern I2C_HandleTypeDef hi2c1;
 
-void sccb_init(void)
-{
-    /* Configure and enable I2C peripheral.
-       For STM32 HAL:
-       hi2c1.Instance = I2C1;
-       hi2c1.Init.ClockSpeed = 100000;
-       hi2c1.Init.DutyCycle = I2C_DUTYCYCLE_2;
-       hi2c1.Init.OwnAddress1 = 0;
-       hi2c1.Init.AddressingMode = I2C_ADDRESSINGMODE_7BIT;
-       HAL_I2C_Init(&hi2c1);
-    */
-	hi2c1.Instance = I2C1;
-	hi2c1.Init.Timing
-}
-
 /* Single register write */
 int sccb_write(uint8_t dev_addr, uint8_t reg_addr, uint8_t data)
 {
@@ -40,9 +25,7 @@ int sccb_read(uint8_t dev_addr, uint8_t reg_addr, uint8_t *data)
 }
 
 /* Optional: burst write helper */
-int sccb_write_multi(uint8_t dev_addr, const uint8_t *data, uint16_t len)
-{
-    if (HAL_I2C_Master_Transmit(&hi2c1, dev_addr, (uint8_t *)data, len, 100) != HAL_OK)
-        return -1;
-    return 0;
+int sccb_probe(void) {
+	// TODO: IMplement
+	return 0;
 }
