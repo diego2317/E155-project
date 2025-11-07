@@ -7251,7 +7251,6 @@ static HAL_StatusTypeDef I2C_IsErrorOccurred(I2C_HandleTypeDef *hi2c, uint32_t T
     }
 
     error_code |= HAL_I2C_ERROR_AF;
-
     status = HAL_ERROR;
   }
 

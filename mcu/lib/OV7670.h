@@ -1,36 +1,16 @@
-#ifndef OV7670_H
-#define OV7670_H
-
-#include <stdint.h>
+/* ov7670.h */
+#pragma once
+#include "sccb.h"
 #include "ov7670_regs.h"
-#include "ov7670_init.h"
 
-/* camera format selector */
-typedef enum {
-    OV7670_FMT_YUV422_QVGA,
-    OV7670_FMT_RGB565_QVGA
-} ov7670_format_t;
-
-/* camera configuration structure */
 typedef struct {
-    ov7670_format_t format;
-    uint8_t i2c_addr;   /* usually 0x42 */
+  sccb_t *bus;
 } ov7670_t;
 
-/* initialize camera over SCCB/I2C */
-int ov7670_init(ov7670_t *cam);
+typedef struct { uint8_t pid, ver; } ov7670_id_t;
 
-/* write a single register */
-int ov7670_write_reg(uint8_t reg, uint8_t value);
-
-/* read a single register */
-int ov7670_read_reg(uint8_t reg, uint8_t *value);
-
-/* apply a register table (terminated by 0xFF,0xFF) */
-int ov7670_write_table(const ov7670_regval_t *table);
-
-/* control helpers, idk if I'll implement */
-int ov7670_set_brightness(uint8_t val);
-int ov7670_set_contrast(uint8_t val);
-
-#endif /* OV7670_H */
+HAL_StatusTypeDef OV7670_Init(ov7670_t *cam, sccb_t *bus);
+HAL_StatusTypeDef OV7670_ReadID(ov7670_t *cam, ov7670_id_t *id);
+HAL_StatusTypeDef OV7670_WriteReg(ov7670_t *cam, uint8_t reg, uint8_t val);
+HAL_StatusTypeDef OV7670_ReadReg (ov7670_t *cam, uint8_t reg, uint8_t *val);
+HAL_StatusTypeDef OV7670_ApplyTable(ov7670_t *cam, const ov7670_regval_t *tbl);

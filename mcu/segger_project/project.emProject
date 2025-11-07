@@ -60,6 +60,14 @@
     <folder Name="Source Files">
       <configuration Name="Common" filter="c;cpp;cxx;cc;h;s;asm;inc" />
       <file file_name="../src/main.c" />
+      <file file_name="../lib/OV7670.c" />
+      <file file_name="../lib/robot_control.c" />
+      <file file_name="../lib/sccb.c" />
+      <file file_name="../lib/STM32L432KC_FLASH.c" />
+      <file file_name="../lib/STM32L432KC_GPIO.c" />
+      <file file_name="../lib/STM32L432KC_I2C.c" />
+      <file file_name="../lib/STM32L432KC_RCC.c" />
+      <file file_name="../lib/STM32L432KC_TIM.c" />
     </folder>
     <folder Name="System Files">
       <file file_name="SEGGER_THUMB_Startup.s" />

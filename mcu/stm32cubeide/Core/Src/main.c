@@ -1,413 +1,378 @@
-/* USER CODE BEGIN Header */
-/**
-  ******************************************************************************
-  * @file           : main.c
-  * @brief          : Main program body
-  ******************************************************************************
-  * @attention
-  *
-  * Copyright (c) 2025 STMicroelectronics.
-  * All rights reserved.
-  *
-  * This software is licensed under terms that can be found in the LICENSE file
-  * in the root directory of this software component.
-  * If no LICENSE file comes with this software, it is provided AS-IS.
-  *
-  ******************************************************************************
-  */
-/* USER CODE END Header */
-/* Includes ------------------------------------------------------------------*/
-#include "main.h"
+// Complete MCU Test Code for OV7670 Camera
+// STM32L432KC - Tests I2C communication and configuration
 
-/* Private includes ----------------------------------------------------------*/
-/* USER CODE BEGIN Includes */
+#include "stm32l4xx_hal.h"
+#include <stdio.h>
 
-/* USER CODE END Includes */
+// Function prototypes
+void SystemClock_Config(void);
+void Error_Handler(void);
+void I2C1_Init(void);
+void UART2_Init(void);
+HAL_StatusTypeDef OV7670_ReadReg(uint8_t reg, uint8_t *value);
+HAL_StatusTypeDef OV7670_WriteReg(uint8_t reg, uint8_t value);
+void OV7670_MinimalTest(void);
+int OV7670_Init(void);
 
-/* Private typedef -----------------------------------------------------------*/
-/* USER CODE BEGIN PTD */
+// OV7670 I2C Address
+#define OV7670_WRITE_ADDR 0x42
+#define OV7670_READ_ADDR  0x43
 
-/* USER CODE END PTD */
+// Key registers
+#define REG_PID   0x0A  // Product ID MSB (should be 0x76)
+#define REG_VER   0x0B  // Product ID LSB (should be 0x73)
+#define REG_COM7  0x12  // Common Control 7
+#define COM7_RESET 0x80
+#define COM7_QVGA  0x40
+#define COM7_YUV   0x00
 
-/* Private define ------------------------------------------------------------*/
-/* USER CODE BEGIN PD */
-
-/* USER CODE END PD */
-
-/* Private macro -------------------------------------------------------------*/
-/* USER CODE BEGIN PM */
-
-/* USER CODE END PM */
-
-/* Private variables ---------------------------------------------------------*/
+// Handles
 I2C_HandleTypeDef hi2c1;
-
-TIM_HandleTypeDef htim1;
-
 UART_HandleTypeDef huart2;
 
-/* USER CODE BEGIN PV */
+// Camera register configuration
+typedef struct {
+    uint8_t reg;
+    uint8_t value;
+} camera_reg;
 
-/* USER CODE END PV */
+// Basic QVGA YUV422 configuration
+const camera_reg ov7670_config[] = {
+    {REG_COM7, COM7_RESET},  // Reset
+    {0xFF, 100},              // Delay 100ms
+    {0x11, 0x01},  // Clock prescaler
+    {REG_COM7, COM7_YUV | COM7_QVGA},  // QVGA YUV
+    {0x32, 0x80},  // HREF
+    {0x17, 0x16},  // HSTART
+    {0x18, 0x04},  // HSTOP
+    {0x19, 0x02},  // VSTART
+    {0x1A, 0x7A},  // VSTOP
+    {0x03, 0x0A},  // VREF
+    {0x70, 0x3A},  // X scaling
+    {0x71, 0x35},  // Y scaling
+    {0x72, 0x11},  // Downsample by 2
+    {0x73, 0xF1},  // Clock divide
+    {0x15, 0x00},  // COM10
+    {0x3A, 0x04},  // TSLB
+    {0x12, 0x00},  // COM7
+    {0x8C, 0x00},  // RGB444
+    {0x04, 0x00},  // COM1
+    {0x40, 0xC0},  // COM15
+    {0x14, 0x48},  // COM9
+    {0x4F, 0x80},  // MTX1
+    {0x50, 0x80},  // MTX2
+    {0x51, 0x00},  // MTX3
+    {0x52, 0x22},  // MTX4
+    {0x53, 0x5E},  // MTX5
+    {0x54, 0x80},  // MTX6
+    {0x58, 0x9E},  // MTXS
+    {0xFF, 0xFF}   // End marker
+};
 
-/* Private function prototypes -----------------------------------------------*/
-void SystemClock_Config(void);
-static void MX_GPIO_Init(void);
-static void MX_USART2_UART_Init(void);
-static void MX_I2C1_Init(void);
-static void MX_TIM1_Init(void);
-/* USER CODE BEGIN PFP */
-
-/* USER CODE END PFP */
-
-/* Private user code ---------------------------------------------------------*/
-/* USER CODE BEGIN 0 */
-
-/* USER CODE END 0 */
-
-/**
-  * @brief  The application entry point.
-  * @retval int
-  */
-int main(void)
-{
-
-  /* USER CODE BEGIN 1 */
-
-  /* USER CODE END 1 */
-
-  /* MCU Configuration--------------------------------------------------------*/
-
-  /* Reset of all peripherals, Initializes the Flash interface and the Systick. */
-  HAL_Init();
-
-  /* USER CODE BEGIN Init */
-
-  /* USER CODE END Init */
-
-  /* Configure the system clock */
-  SystemClock_Config();
-
-  /* USER CODE BEGIN SysInit */
-
-  /* USER CODE END SysInit */
-
-  /* Initialize all configured peripherals */
-  MX_GPIO_Init();
-  MX_USART2_UART_Init();
-  MX_I2C1_Init();
-  MX_TIM1_Init();
-  /* USER CODE BEGIN 2 */
-  // Setup XCLK on PB0 via TIM1 CH2
-  HAL_TIM_PWM_Start(&htim1, TIM_CHANNEL_2);
-  /* USER CODE END 2 */
-
-  /* Infinite loop */
-  /* USER CODE BEGIN WHILE */
-  while (1)
-  {
-    /* USER CODE END WHILE */
-
-    /* USER CODE BEGIN 3 */
-  }
-  /* USER CODE END 3 */
+// I2C Initialization
+void I2C1_Init(void) {
+    GPIO_InitTypeDef GPIO_InitStruct = {0};
+    
+    // Enable clocks
+    __HAL_RCC_GPIOB_CLK_ENABLE();
+    __HAL_RCC_I2C1_CLK_ENABLE();
+    
+    // Configure I2C pins: PB6 (SCL), PB7 (SDA)
+    GPIO_InitStruct.Pin = GPIO_PIN_6 | GPIO_PIN_7;
+    GPIO_InitStruct.Mode = GPIO_MODE_AF_OD;
+    GPIO_InitStruct.Pull = GPIO_PULLUP;
+    GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_HIGH;
+    GPIO_InitStruct.Alternate = GPIO_AF4_I2C1;
+    HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
+    
+    // Configure I2C (100kHz)
+    hi2c1.Instance = I2C1;
+    hi2c1.Init.Timing = 0x10909CEC;  // 100kHz @ 80MHz
+    hi2c1.Init.OwnAddress1 = 0;
+    hi2c1.Init.AddressingMode = I2C_ADDRESSINGMODE_7BIT;
+    hi2c1.Init.DualAddressMode = I2C_DUALADDRESS_DISABLE;
+    hi2c1.Init.GeneralCallMode = I2C_GENERALCALL_DISABLE;
+    hi2c1.Init.NoStretchMode = I2C_NOSTRETCH_DISABLE;
+    
+    if (HAL_I2C_Init(&hi2c1) != HAL_OK) {
+        Error_Handler();
+    }
 }
 
-/**
-  * @brief System Clock Configuration
-  * @retval None
-  */
+// UART Initialization for printf
+void UART2_Init(void) {
+    GPIO_InitTypeDef GPIO_InitStruct = {0};
+    
+    __HAL_RCC_USART2_CLK_ENABLE();
+    __HAL_RCC_GPIOA_CLK_ENABLE();
+    
+    // PA2: TX, PA15: RX
+    GPIO_InitStruct.Pin = GPIO_PIN_2 | GPIO_PIN_15;
+    GPIO_InitStruct.Mode = GPIO_MODE_AF_PP;
+    GPIO_InitStruct.Pull = GPIO_NOPULL;
+    GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_HIGH;
+    GPIO_InitStruct.Alternate = GPIO_AF7_USART2;
+    HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
+    
+    huart2.Instance = USART2;
+    huart2.Init.BaudRate = 115200;
+    huart2.Init.WordLength = UART_WORDLENGTH_8B;
+    huart2.Init.StopBits = UART_STOPBITS_1;
+    huart2.Init.Parity = UART_PARITY_NONE;
+    huart2.Init.Mode = UART_MODE_TX_RX;
+    huart2.Init.HwFlowCtl = UART_HWCONTROL_NONE;
+    huart2.Init.OverSampling = UART_OVERSAMPLING_16;
+    
+    HAL_UART_Init(&huart2);
+}
+
+// Redirect printf to UART
+int _write(int file, char *ptr, int len) {
+    HAL_UART_Transmit(&huart2, (uint8_t*)ptr, len, 1000);
+    return len;
+}
+
+// Read register from OV7670
+HAL_StatusTypeDef OV7670_ReadReg(uint8_t reg, uint8_t *value) {
+    HAL_StatusTypeDef status;
+    
+    status = HAL_I2C_Master_Transmit(&hi2c1, OV7670_WRITE_ADDR, &reg, 1, 1000);
+    if (status != HAL_OK) return status;
+    
+    status = HAL_I2C_Master_Receive(&hi2c1, OV7670_READ_ADDR, value, 1, 1000);
+    return status;
+}
+
+// Write register to OV7670
+HAL_StatusTypeDef OV7670_WriteReg(uint8_t reg, uint8_t value) {
+    uint8_t data[2] = {reg, value};
+    HAL_StatusTypeDef status;
+    
+    status = HAL_I2C_Master_Transmit(&hi2c1, OV7670_WRITE_ADDR, data, 2, 1000);
+    HAL_Delay(1);
+    
+    return status;
+}
+
+// Minimal camera communication test
+void OV7670_MinimalTest(void) {
+    uint8_t pid, ver, com7;
+    HAL_StatusTypeDef status;
+    
+    printf("\n=== OV7670 Camera Test ===\n");
+    printf("Testing I2C communication...\n\n");
+    
+    // Test 1: Read Product ID
+    status = OV7670_ReadReg(REG_PID, &pid);
+    if (status == HAL_OK) {
+        printf("Product ID MSB: 0x%02X ", pid);
+        if (pid == 0x76) {
+            printf("[OK]\n");
+        } else {
+            printf("[FAIL - Expected 0x76]\n");
+        }
+    } else {
+        printf("FAILED to read Product ID!\n");
+        printf("Check connections:\n");
+        printf("  - PB6 -> SIOC (SCL)\n");
+        printf("  - PB7 -> SIOD (SDA)\n");
+        printf("  - 4.7k pull-ups on SDA/SCL\n");
+        printf("  - Camera powered (3.3V)\n");
+        return;
+    }
+    
+    // Test 2: Read Version
+    status = OV7670_ReadReg(REG_VER, &ver);
+    if (status == HAL_OK) {
+        printf("Product ID LSB: 0x%02X ", ver);
+        if (ver == 0x73) {
+            printf("[OK]\n\n");
+        } else {
+            printf("[FAIL - Expected 0x73]\n\n");
+        }
+    } else {
+        printf("FAILED to read version!\n\n");
+        return;
+    }
+    
+    // Test 3: Read/Write test
+    printf("Testing register write...\n");
+    OV7670_ReadReg(REG_COM7, &com7);
+    printf("  COM7 before: 0x%02X\n", com7);
+    
+    OV7670_WriteReg(REG_COM7, 0x80);  // Reset
+    HAL_Delay(10);
+    
+    OV7670_ReadReg(REG_COM7, &com7);
+    printf("  COM7 after reset: 0x%02X\n\n", com7);
+    
+    printf("=== Test Complete ===\n");
+    if (pid == 0x76 && ver == 0x73) {
+        printf("SUCCESS! Camera communication working!\n");
+        printf("Ready for full configuration.\n\n");
+    }
+}
+
+// Full camera initialization
+int OV7670_Init(void) {
+    int i = 0;
+    
+    printf("\n=== Initializing OV7670 ===\n");
+    
+    // Write configuration registers
+    while (ov7670_config[i].reg != 0xFF || ov7670_config[i].value != 0xFF) {
+        if (ov7670_config[i].reg == 0xFF) {
+            // Delay marker
+            printf("Delay %d ms...\n", ov7670_config[i].value);
+            HAL_Delay(ov7670_config[i].value);
+        } else {
+            if (OV7670_WriteReg(ov7670_config[i].reg, 
+                               ov7670_config[i].value) != HAL_OK) {
+                printf("Failed to write reg 0x%02X\n", ov7670_config[i].reg);
+                return -1;
+            }
+        }
+        i++;
+    }
+    
+    printf("Camera configured! (%d registers written)\n", i);
+    
+    // Verify configuration
+    uint8_t com7;
+    OV7670_ReadReg(REG_COM7, &com7);
+    printf("COM7 = 0x%02X (QVGA YUV mode)\n\n", com7);
+    
+    return 0;
+}
+
+// System Clock Configuration to 80MHz
 void SystemClock_Config(void)
 {
-  RCC_OscInitTypeDef RCC_OscInitStruct = {0};
-  RCC_ClkInitTypeDef RCC_ClkInitStruct = {0};
+    RCC_OscInitTypeDef RCC_OscInitStruct = {0};
+    RCC_ClkInitTypeDef RCC_ClkInitStruct = {0};
 
-  /** Configure the main internal regulator output voltage
-  */
-  if (HAL_PWREx_ControlVoltageScaling(PWR_REGULATOR_VOLTAGE_SCALE1) != HAL_OK)
-  {
-    Error_Handler();
-  }
+    if (HAL_PWREx_ControlVoltageScaling(PWR_REGULATOR_VOLTAGE_SCALE1) != HAL_OK) {
+        Error_Handler();
+    }
 
-  /** Initializes the RCC Oscillators according to the specified parameters
-  * in the RCC_OscInitTypeDef structure.
-  */
-  RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_HSI;
-  RCC_OscInitStruct.HSIState = RCC_HSI_ON;
-  RCC_OscInitStruct.HSICalibrationValue = RCC_HSICALIBRATION_DEFAULT;
-  RCC_OscInitStruct.PLL.PLLState = RCC_PLL_ON;
-  RCC_OscInitStruct.PLL.PLLSource = RCC_PLLSOURCE_HSI;
-  RCC_OscInitStruct.PLL.PLLM = 1;
-  RCC_OscInitStruct.PLL.PLLN = 10;
-  RCC_OscInitStruct.PLL.PLLP = RCC_PLLP_DIV7;
-  RCC_OscInitStruct.PLL.PLLQ = RCC_PLLQ_DIV2;
-  RCC_OscInitStruct.PLL.PLLR = RCC_PLLR_DIV2;
-  if (HAL_RCC_OscConfig(&RCC_OscInitStruct) != HAL_OK)
-  {
-    Error_Handler();
-  }
+    RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_MSI;
+    RCC_OscInitStruct.MSIState = RCC_MSI_ON;
+    RCC_OscInitStruct.MSICalibrationValue = 0;
+    RCC_OscInitStruct.MSIClockRange = RCC_MSIRANGE_6;  // 4 MHz
+    RCC_OscInitStruct.PLL.PLLState = RCC_PLL_ON;
+    RCC_OscInitStruct.PLL.PLLSource = RCC_PLLSOURCE_MSI;
+    RCC_OscInitStruct.PLL.PLLM = 1;
+    RCC_OscInitStruct.PLL.PLLN = 40;
+    RCC_OscInitStruct.PLL.PLLP = RCC_PLLP_DIV7;
+    RCC_OscInitStruct.PLL.PLLQ = RCC_PLLQ_DIV2;
+    RCC_OscInitStruct.PLL.PLLR = RCC_PLLR_DIV2;
+    
+    if (HAL_RCC_OscConfig(&RCC_OscInitStruct) != HAL_OK) {
+        Error_Handler();
+    }
 
-  /** Initializes the CPU, AHB and APB buses clocks
-  */
-  RCC_ClkInitStruct.ClockType = RCC_CLOCKTYPE_HCLK|RCC_CLOCKTYPE_SYSCLK
-                              |RCC_CLOCKTYPE_PCLK1|RCC_CLOCKTYPE_PCLK2;
-  RCC_ClkInitStruct.SYSCLKSource = RCC_SYSCLKSOURCE_PLLCLK;
-  RCC_ClkInitStruct.AHBCLKDivider = RCC_SYSCLK_DIV1;
-  RCC_ClkInitStruct.APB1CLKDivider = RCC_HCLK_DIV1;
-  RCC_ClkInitStruct.APB2CLKDivider = RCC_HCLK_DIV1;
+    RCC_ClkInitStruct.ClockType = RCC_CLOCKTYPE_HCLK | RCC_CLOCKTYPE_SYSCLK
+                                | RCC_CLOCKTYPE_PCLK1 | RCC_CLOCKTYPE_PCLK2;
+    RCC_ClkInitStruct.SYSCLKSource = RCC_SYSCLKSOURCE_PLLCLK;
+    RCC_ClkInitStruct.AHBCLKDivider = RCC_SYSCLK_DIV1;
+    RCC_ClkInitStruct.APB1CLKDivider = RCC_HCLK_DIV1;
+    RCC_ClkInitStruct.APB2CLKDivider = RCC_HCLK_DIV1;
 
-  if (HAL_RCC_ClockConfig(&RCC_ClkInitStruct, FLASH_LATENCY_4) != HAL_OK)
-  {
-    Error_Handler();
-  }
+    if (HAL_RCC_ClockConfig(&RCC_ClkInitStruct, FLASH_LATENCY_4) != HAL_OK) {
+        Error_Handler();
+    }
 }
 
-/**
-  * @brief I2C1 Initialization Function
-  * @param None
-  * @retval None
-  */
-static void MX_I2C1_Init(void)
-{
-
-  /* USER CODE BEGIN I2C1_Init 0 */
-
-  /* USER CODE END I2C1_Init 0 */
-
-  /* USER CODE BEGIN I2C1_Init 1 */
-
-  /* USER CODE END I2C1_Init 1 */
-  hi2c1.Instance = I2C1;
-  hi2c1.Init.Timing = 0x10D19CE4;
-  hi2c1.Init.OwnAddress1 = 0;
-  hi2c1.Init.AddressingMode = I2C_ADDRESSINGMODE_7BIT;
-  hi2c1.Init.DualAddressMode = I2C_DUALADDRESS_DISABLE;
-  hi2c1.Init.OwnAddress2 = 0;
-  hi2c1.Init.OwnAddress2Masks = I2C_OA2_NOMASK;
-  hi2c1.Init.GeneralCallMode = I2C_GENERALCALL_DISABLE;
-  hi2c1.Init.NoStretchMode = I2C_NOSTRETCH_DISABLE;
-  if (HAL_I2C_Init(&hi2c1) != HAL_OK)
-  {
-    Error_Handler();
-  }
-
-  /** Configure Analogue filter
-  */
-  if (HAL_I2CEx_ConfigAnalogFilter(&hi2c1, I2C_ANALOGFILTER_ENABLE) != HAL_OK)
-  {
-    Error_Handler();
-  }
-
-  /** Configure Digital filter
-  */
-  if (HAL_I2CEx_ConfigDigitalFilter(&hi2c1, 0) != HAL_OK)
-  {
-    Error_Handler();
-  }
-  /* USER CODE BEGIN I2C1_Init 2 */
-
-  /* USER CODE END I2C1_Init 2 */
-
-}
-
-/**
-  * @brief TIM1 Initialization Function
-  * @param None
-  * @retval None
-  */
-static void MX_TIM1_Init(void)
-{
-
-  /* USER CODE BEGIN TIM1_Init 0 */
-
-  /* USER CODE END TIM1_Init 0 */
-
-  TIM_ClockConfigTypeDef sClockSourceConfig = {0};
-  TIM_MasterConfigTypeDef sMasterConfig = {0};
-  TIM_OC_InitTypeDef sConfigOC = {0};
-  TIM_BreakDeadTimeConfigTypeDef sBreakDeadTimeConfig = {0};
-
-  /* USER CODE BEGIN TIM1_Init 1 */
-
-  /* USER CODE END TIM1_Init 1 */
-  htim1.Instance = TIM1;
-  htim1.Init.Prescaler = 0;
-  htim1.Init.CounterMode = TIM_COUNTERMODE_UP;
-  htim1.Init.Period = 7;
-  htim1.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
-  htim1.Init.RepetitionCounter = 0;
-  htim1.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
-  if (HAL_TIM_Base_Init(&htim1) != HAL_OK)
-  {
-    Error_Handler();
-  }
-  sClockSourceConfig.ClockSource = TIM_CLOCKSOURCE_INTERNAL;
-  if (HAL_TIM_ConfigClockSource(&htim1, &sClockSourceConfig) != HAL_OK)
-  {
-    Error_Handler();
-  }
-  if (HAL_TIM_PWM_Init(&htim1) != HAL_OK)
-  {
-    Error_Handler();
-  }
-  sMasterConfig.MasterOutputTrigger = TIM_TRGO_RESET;
-  sMasterConfig.MasterOutputTrigger2 = TIM_TRGO2_RESET;
-  sMasterConfig.MasterSlaveMode = TIM_MASTERSLAVEMODE_DISABLE;
-  if (HAL_TIMEx_MasterConfigSynchronization(&htim1, &sMasterConfig) != HAL_OK)
-  {
-    Error_Handler();
-  }
-  sConfigOC.OCMode = TIM_OCMODE_PWM1;
-  sConfigOC.Pulse = 4;
-  sConfigOC.OCPolarity = TIM_OCPOLARITY_HIGH;
-  sConfigOC.OCNPolarity = TIM_OCNPOLARITY_HIGH;
-  sConfigOC.OCFastMode = TIM_OCFAST_DISABLE;
-  sConfigOC.OCIdleState = TIM_OCIDLESTATE_RESET;
-  sConfigOC.OCNIdleState = TIM_OCNIDLESTATE_RESET;
-  if (HAL_TIM_PWM_ConfigChannel(&htim1, &sConfigOC, TIM_CHANNEL_2) != HAL_OK)
-  {
-    Error_Handler();
-  }
-  sBreakDeadTimeConfig.OffStateRunMode = TIM_OSSR_DISABLE;
-  sBreakDeadTimeConfig.OffStateIDLEMode = TIM_OSSI_DISABLE;
-  sBreakDeadTimeConfig.LockLevel = TIM_LOCKLEVEL_OFF;
-  sBreakDeadTimeConfig.DeadTime = 0;
-  sBreakDeadTimeConfig.BreakState = TIM_BREAK_DISABLE;
-  sBreakDeadTimeConfig.BreakPolarity = TIM_BREAKPOLARITY_HIGH;
-  sBreakDeadTimeConfig.BreakFilter = 0;
-  sBreakDeadTimeConfig.Break2State = TIM_BREAK2_DISABLE;
-  sBreakDeadTimeConfig.Break2Polarity = TIM_BREAK2POLARITY_HIGH;
-  sBreakDeadTimeConfig.Break2Filter = 0;
-  sBreakDeadTimeConfig.AutomaticOutput = TIM_AUTOMATICOUTPUT_DISABLE;
-  if (HAL_TIMEx_ConfigBreakDeadTime(&htim1, &sBreakDeadTimeConfig) != HAL_OK)
-  {
-    Error_Handler();
-  }
-  /* USER CODE BEGIN TIM1_Init 2 */
-
-  /* USER CODE END TIM1_Init 2 */
-  HAL_TIM_MspPostInit(&htim1);
-
-}
-
-/**
-  * @brief USART2 Initialization Function
-  * @param None
-  * @retval None
-  */
-static void MX_USART2_UART_Init(void)
-{
-
-  /* USER CODE BEGIN USART2_Init 0 */
-
-  /* USER CODE END USART2_Init 0 */
-
-  /* USER CODE BEGIN USART2_Init 1 */
-
-  /* USER CODE END USART2_Init 1 */
-  huart2.Instance = USART2;
-  huart2.Init.BaudRate = 115200;
-  huart2.Init.WordLength = UART_WORDLENGTH_8B;
-  huart2.Init.StopBits = UART_STOPBITS_1;
-  huart2.Init.Parity = UART_PARITY_NONE;
-  huart2.Init.Mode = UART_MODE_TX_RX;
-  huart2.Init.HwFlowCtl = UART_HWCONTROL_NONE;
-  huart2.Init.OverSampling = UART_OVERSAMPLING_16;
-  huart2.Init.OneBitSampling = UART_ONE_BIT_SAMPLE_DISABLE;
-  huart2.AdvancedInit.AdvFeatureInit = UART_ADVFEATURE_NO_INIT;
-  if (HAL_UART_Init(&huart2) != HAL_OK)
-  {
-    Error_Handler();
-  }
-  /* USER CODE BEGIN USART2_Init 2 */
-
-  /* USER CODE END USART2_Init 2 */
-
-}
-
-/**
-  * @brief GPIO Initialization Function
-  * @param None
-  * @retval None
-  */
-static void MX_GPIO_Init(void)
-{
-  GPIO_InitTypeDef GPIO_InitStruct = {0};
-  /* USER CODE BEGIN MX_GPIO_Init_1 */
-
-  /* USER CODE END MX_GPIO_Init_1 */
-
-  /* GPIO Ports Clock Enable */
-  __HAL_RCC_GPIOC_CLK_ENABLE();
-  __HAL_RCC_GPIOA_CLK_ENABLE();
-  __HAL_RCC_GPIOB_CLK_ENABLE();
-
-  /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(PWDN_GPIO_Port, PWDN_Pin, GPIO_PIN_RESET);
-
-  /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(RESET__GPIO_Port, RESET__Pin, GPIO_PIN_SET);
-
-  /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(LD3_GPIO_Port, LD3_Pin, GPIO_PIN_RESET);
-
-  /*Configure GPIO pin : PWDN_Pin */
-  GPIO_InitStruct.Pin = PWDN_Pin;
-  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
-  GPIO_InitStruct.Pull = GPIO_NOPULL;
-  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
-  HAL_GPIO_Init(PWDN_GPIO_Port, &GPIO_InitStruct);
-
-  /*Configure GPIO pin : RESET__Pin */
-  GPIO_InitStruct.Pin = RESET__Pin;
-  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
-  GPIO_InitStruct.Pull = GPIO_PULLUP;
-  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
-  HAL_GPIO_Init(RESET__GPIO_Port, &GPIO_InitStruct);
-
-  /*Configure GPIO pin : LD3_Pin */
-  GPIO_InitStruct.Pin = LD3_Pin;
-  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
-  GPIO_InitStruct.Pull = GPIO_NOPULL;
-  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
-  HAL_GPIO_Init(LD3_GPIO_Port, &GPIO_InitStruct);
-
-  /* USER CODE BEGIN MX_GPIO_Init_2 */
-
-  /* USER CODE END MX_GPIO_Init_2 */
-}
-
-/* USER CODE BEGIN 4 */
-
-/* USER CODE END 4 */
-
-/**
-  * @brief  This function is executed in case of error occurrence.
-  * @retval None
-  */
 void Error_Handler(void)
 {
-  /* USER CODE BEGIN Error_Handler_Debug */
-  /* User can add his own implementation to report the HAL error return state */
-  __disable_irq();
-  while (1)
-  {
-  }
-  /* USER CODE END Error_Handler_Debug */
+    __disable_irq();
+    while (1) {
+        // Error: stay here
+    }
 }
-#ifdef USE_FULL_ASSERT
-/**
-  * @brief  Reports the name of the source file and the source line number
-  *         where the assert_param error has occurred.
-  * @param  file: pointer to the source file name
-  * @param  line: assert_param error line source number
-  * @retval None
-  */
-void assert_failed(uint8_t *file, uint32_t line)
-{
-  /* USER CODE BEGIN 6 */
-  /* User can add his own implementation to report the file name and line number,
-     ex: printf("Wrong parameters value: file %s on line %d\r\n", file, line) */
-  /* USER CODE END 6 */
+
+void XCLK_Init(void) {
+    __HAL_RCC_TIM1_CLK_ENABLE();
+    __HAL_RCC_GPIOA_CLK_ENABLE();
+
+    GPIO_InitTypeDef gpio = {0};
+    gpio.Pin = GPIO_PIN_11;                // PA11 -> XCLK
+    gpio.Mode = GPIO_MODE_AF_PP;
+    gpio.Pull = GPIO_NOPULL;
+    gpio.Speed = GPIO_SPEED_FREQ_VERY_HIGH;
+    gpio.Alternate = GPIO_AF1_TIM1;        // TIM1 alternate function
+    HAL_GPIO_Init(GPIOA, &gpio);
+
+    TIM_HandleTypeDef htim1 = {0};
+    TIM_OC_InitTypeDef sConfigOC = {0};
+
+    htim1.Instance = TIM1;
+    htim1.Init.Prescaler = 0;
+    htim1.Init.CounterMode = TIM_COUNTERMODE_UP;
+    htim1.Init.Period = 7;                 // 80MHz / (7+1) = 10MHz
+    htim1.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
+    HAL_TIM_PWM_Init(&htim1);
+
+    sConfigOC.OCMode = TIM_OCMODE_PWM1;
+    sConfigOC.Pulse = 4;                   // 50% duty
+    sConfigOC.OCPolarity = TIM_OCPOLARITY_HIGH;
+    HAL_TIM_PWM_ConfigChannel(&htim1, &sConfigOC, TIM_CHANNEL_4);
+
+    HAL_TIM_PWM_Start(&htim1, TIM_CHANNEL_4);
 }
-#endif /* USE_FULL_ASSERT */
+
+// Main function
+int main(void) {
+    // Initialize HAL
+    HAL_Init();
+    
+    // Configure system clock to 80MHz
+    SystemClock_Config();
+    XCLK_Init(); 
+    // Initialize peripherals
+    UART2_Init();
+    I2C1_Init();
+    
+    // Configure LED for status (PB3)
+    __HAL_RCC_GPIOB_CLK_ENABLE();
+    GPIO_InitTypeDef led;
+    led.Pin = GPIO_PIN_3;
+    led.Mode = GPIO_MODE_OUTPUT_PP;
+    led.Pull = GPIO_NOPULL;
+    led.Speed = GPIO_SPEED_FREQ_LOW;
+    HAL_GPIO_Init(GPIOB, &led);
+    
+    printf("\n\n");
+    printf("========================================\n");
+    printf("  OV7670 Camera Test for Line Follower\n");
+    printf("  STM32L432KC\n");
+    printf("========================================\n");
+    
+    // Wait for camera to power up
+    printf("Waiting for camera...\n");
+    HAL_Delay(100);
+    
+    // Test communication
+    OV7670_MinimalTest();
+    
+    // If test passed, do full configuration
+    HAL_Delay(500);
+    
+    printf("Press 'c' to configure camera or any key to repeat test...\n");
+    
+    while (1) {
+        // Blink LED to show we're alive
+        HAL_GPIO_TogglePin(GPIOB, GPIO_PIN_3);
+        HAL_Delay(500);
+        
+        // Check for user input (optional - for interactive testing)
+        // You can comment this out and just call OV7670_Init() directly
+        
+        // For now, just repeat test every 5 seconds
+        static uint32_t last_test = 0;
+        if (HAL_GetTick() - last_test > 5000) {
+            last_test = HAL_GetTick();
+            OV7670_MinimalTest();
+        }
+    }
+}
