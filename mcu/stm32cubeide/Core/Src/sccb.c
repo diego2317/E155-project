@@ -1,6 +1,6 @@
 #include "sccb.h"
 
-#include "stm32l4xx_hal.h"
+#include "stm32l4xx_hal.h"   /* replace with your MCU’s HAL, e.g. stm32l4xx_hal_i2c.h */
 
 extern I2C_HandleTypeDef hi2c1;
 
@@ -24,7 +24,7 @@ int sccb_read(uint8_t dev_addr, uint8_t reg_addr, uint8_t *data)
     return 0;
 }
 
-/* Check if we configured the registers properly */
+/* Optional: burst write helper */
 int sccb_probe(void) {
 	// TODO: IMplement
 	return 0;

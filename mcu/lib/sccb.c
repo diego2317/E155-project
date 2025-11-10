@@ -1,30 +1,45 @@
-/* sccb.c */
 #include "sccb.h"
+#include "stm32l432_hal_i2c.h"   /* replace with your MCU’s HAL, e.g. stm32l4xx_hal_i2c.h */
 
-HAL_StatusTypeDef SCCB_Init_I2C1(sccb_t *bus, uint32_t timing) {
-  __HAL_RCC_GPIOB_CLK_ENABLE(); __HAL_RCC_I2C1_CLK_ENABLE();
-  GPIO_InitTypeDef g = {0};
-  g.Pin = GPIO_PIN_6 | GPIO_PIN_7; g.Mode = GPIO_MODE_AF_OD; g.Pull = GPIO_PULLUP;
-  g.Speed = GPIO_SPEED_FREQ_HIGH; g.Alternate = GPIO_AF4_I2C1; HAL_GPIO_Init(GPIOB, &g);
-  bus->hi2c.Instance = I2C1;
-  bus->hi2c.Init.Timing = timing;
-  bus->hi2c.Init.OwnAddress1 = 0;
-  bus->hi2c.Init.AddressingMode = I2C_ADDRESSINGMODE_7BIT;
-  bus->hi2c.Init.DualAddressMode = I2C_DUALADDRESS_DISABLE;
-  bus->hi2c.Init.GeneralCallMode = I2C_GENERALCALL_DISABLE;
-  bus->hi2c.Init.NoStretchMode = I2C_NOSTRETCH_DISABLE;
-  return HAL_I2C_Init(&bus->hi2c);
+/* Example: assumes HAL_I2C_HandleTypeDef hi2c1 exists */
+
+void sccb_init(void)
+{
+    /* Configure and enable I2C peripheral.
+       For STM32 HAL:
+       hi2c1.Instance = I2C1;
+       hi2c1.Init.ClockSpeed = 100000;
+       hi2c1.Init.DutyCycle = I2C_DUTYCYCLE_2;
+       hi2c1.Init.OwnAddress1 = 0;
+       hi2c1.Init.AddressingMode = I2C_ADDRESSINGMODE_7BIT;
+       HAL_I2C_Init(&hi2c1);
+    */
 }
 
-HAL_StatusTypeDef SCCB_Read8(sccb_t *bus, uint8_t reg, uint8_t *val) {
-  HAL_StatusTypeDef st = HAL_I2C_Master_Transmit(&bus->hi2c, (bus->dev7<<1), &reg, 1, 1000);
-  if (st != HAL_OK) return st;
-  return HAL_I2C_Master_Receive(&bus->hi2c, (bus->dev7<<1) | 1U, val, 1, 1000);
+/* Single register write */
+int sccb_write(uint8_t dev_addr, uint8_t reg_addr, uint8_t data)
+{
+    uint8_t buf[2] = { reg_addr, data };
+    /* Replace with your platform's I2C write routine */
+    if (HAL_I2C_Master_Transmit(&hi2c1, dev_addr, buf, 2, 100) != HAL_OK)
+        return -1;
+    return 0;
 }
 
-HAL_StatusTypeDef SCCB_Write8(sccb_t *bus, uint8_t reg, uint8_t val) {
-  uint8_t b[2] = {reg, val};
-  HAL_StatusTypeDef st = HAL_I2C_Master_Transmit(&bus->hi2c, (bus->dev7<<1), b, 2, 1000);
-  HAL_Delay(1);
-  return st;
+/* Single register read */
+int sccb_read(uint8_t dev_addr, uint8_t reg_addr, uint8_t *data)
+{
+    if (HAL_I2C_Master_Transmit(&hi2c1, dev_addr, &reg_addr, 1, 100) != HAL_OK)
+        return -1;
+    if (HAL_I2C_Master_Receive(&hi2c1, dev_addr, data, 1, 100) != HAL_OK)
+        return -1;
+    return 0;
+}
+
+/* Optional: burst write helper */
+int sccb_write_multi(uint8_t dev_addr, const uint8_t *data, uint16_t len)
+{
+    if (HAL_I2C_Master_Transmit(&hi2c1, dev_addr, (uint8_t *)data, len, 100) != HAL_OK)
+        return -1;
+    return 0;
 }
