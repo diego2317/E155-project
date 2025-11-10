@@ -1,0 +1,177 @@
+<!DOCTYPE CrossStudio_Project_File>
+<solution Name="project" target="8" version="2">
+  <configuration
+    Name="Debug"
+    c_preprocessor_definitions="DEBUG"
+    gcc_debugging_level="Level 3"
+    gcc_omit_frame_pointer="Yes"
+    gcc_optimization_level="None" />
+  <configuration
+    Name="Release"
+    c_preprocessor_definitions="NDEBUG"
+    gcc_debugging_level="Level 2"
+    gcc_omit_frame_pointer="Yes"
+    gcc_optimization_level="Level 2 balanced" />
+  <project Name="project">
+    <configuration
+      LIBRARY_IO_TYPE="RTT"
+      Name="Common"
+      Target="STM32L432KCUx"
+      arm_architecture="v7EM"
+      arm_compiler_variant="SEGGER"
+      arm_core_type="Cortex-M4"
+      arm_endian="Little"
+      arm_fp_abi="Hard"
+      arm_fpu_type="FPv4-SP-D16"
+      arm_linker_heap_size="1024"
+      arm_linker_process_stack_size="0"
+      arm_linker_stack_size="2048"
+      arm_linker_variant="SEGGER"
+      arm_simulator_memory_simulation_parameter="ROM;0x08000000;0x00040000;RAM;0x10000000;0x00004000;RAM;0x20000000;0x0000C000"
+      arm_target_device_name="STM32L432KC"
+      arm_target_interface_type="SWD"
+      c_preprocessor_definitions="ARM_MATH_CM4;STM32L432xx;__STM32L432_SUBFAMILY;__STM32L4XX_FAMILY"
+      c_user_include_directories="$(ProjectDir)/CMSIS_5/CMSIS/Core/Include;$(ProjectDir)/STM32L4xx/Device/Include"
+      debug_register_definition_file="$(ProjectDir)/STM32L4x2_Registers.xml"
+      debug_stack_pointer_start="__stack_end__"
+      debug_start_from_entry_point_symbol="Yes"
+      debug_target_connection="J-Link"
+      gcc_entry_point="Reset_Handler"
+      link_linker_script_file="$(ProjectDir)/STM32L4xx_Flash.icf"
+      linker_memory_map_file="$(ProjectDir)/STM32L432KCUx_MemoryMap.xml"
+      macros="DeviceHeaderFile=$(PackagesDir)/STM32L4xx/Device/Include/stm32l4xx.h;DeviceSystemFile=$(PackagesDir)/STM32L4xx/Device/Source/system_stm32l4xx.c;DeviceVectorsFile=$(PackagesDir)/STM32L4xx/Source/stm32l432xx_Vectors.s;DeviceFamily=STM32L4xx;DeviceSubFamily=STM32L432;Target=STM32L432KCUx"
+      project_directory=""
+      project_type="Executable"
+      target_reset_script="Reset();" />
+    <folder Name="CMSIS Files">
+      <file file_name="STM32L4xx/Device/Include/stm32l4xx.h" />
+      <file file_name="STM32L4xx/Device/Source/system_stm32l4xx.c">
+        <configuration
+          Name="Common"
+          default_code_section=".init"
+          default_const_section=".init_rodata" />
+      </file>
+    </folder>
+    <folder Name="Script Files">
+      <file file_name="STM32L4xx/Scripts/STM32L4xx_Target.js">
+        <configuration Name="Common" file_type="Reset Script" />
+      </file>
+    </folder>
+    <folder Name="Source Files">
+      <configuration Name="Common" filter="c;cpp;cxx;cc;h;s;asm;inc" />
+      <file file_name="main.c" />
+      <file file_name="../hal/Src/stm32l4xx_hal_adc.c" />
+      <file file_name="../hal/Src/stm32l4xx_hal_adc_ex.c" />
+      <file file_name="../hal/Src/Legacy/stm32l4xx_hal_can.c" />
+      <file file_name="../hal/Src/stm32l4xx_hal_can.c" />
+      <file file_name="../hal/Src/stm32l4xx_hal_comp.c" />
+      <file file_name="../hal/Src/stm32l4xx_hal_cortex.c" />
+      <file file_name="../hal/Src/stm32l4xx_hal_crc.c" />
+      <file file_name="../hal/Src/stm32l4xx_hal_crc_ex.c" />
+      <file file_name="../hal/Src/stm32l4xx_hal_cryp.c" />
+      <file file_name="../hal/Src/stm32l4xx_hal_cryp_ex.c" />
+      <file file_name="../hal/Src/stm32l4xx_hal_dac.c" />
+      <file file_name="../hal/Src/stm32l4xx_hal_dac_ex.c" />
+      <file file_name="../hal/Src/stm32l4xx_hal_dcmi.c" />
+      <file file_name="../hal/Src/stm32l4xx_hal_dfsdm.c" />
+      <file file_name="../hal/Src/stm32l4xx_hal_dfsdm_ex.c" />
+      <file file_name="../hal/Src/stm32l4xx_hal_dma.c" />
+      <file file_name="../hal/Src/stm32l4xx_hal_dma2d.c" />
+      <file file_name="../hal/Src/stm32l4xx_hal_dma_ex.c" />
+      <file file_name="../hal/Src/stm32l4xx_hal_dsi.c" />
+      <file file_name="../hal/Src/stm32l4xx_hal_exti.c" />
+      <file file_name="../hal/Src/stm32l4xx_hal_firewall.c" />
+      <file file_name="../hal/Src/stm32l4xx_hal_flash.c" />
+      <file file_name="../hal/Src/stm32l4xx_hal_flash_ex.c" />
+      <file file_name="../hal/Src/stm32l4xx_hal_flash_ramfunc.c" />
+      <file file_name="../hal/Src/stm32l4xx_hal_gfxmmu.c" />
+      <file file_name="../hal/Src/stm32l4xx_hal_gpio.c" />
+      <file file_name="../hal/Src/stm32l4xx_hal_hash.c" />
+      <file file_name="../hal/Src/stm32l4xx_hal_hash_ex.c" />
+      <file file_name="../hal/Src/stm32l4xx_hal_hcd.c" />
+      <file file_name="../hal/Src/stm32l4xx_hal_i2c.c" />
+      <file file_name="../hal/Src/stm32l4xx_hal_i2c_ex.c" />
+      <file file_name="../hal/Src/stm32l4xx_hal_irda.c" />
+      <file file_name="../hal/Src/stm32l4xx_hal_iwdg.c" />
+      <file file_name="../hal/Src/stm32l4xx_hal_lcd.c" />
+      <file file_name="../hal/Src/stm32l4xx_hal_lptim.c" />
+      <file file_name="../hal/Src/stm32l4xx_hal_ltdc.c" />
+      <file file_name="../hal/Src/stm32l4xx_hal_ltdc_ex.c" />
+      <file file_name="../hal/Src/stm32l4xx_hal_mmc.c" />
+      <file file_name="../hal/Src/stm32l4xx_hal_mmc_ex.c" />
+      <file file_name="../hal/Src/stm32l4xx_hal_msp_template.c" />
+      <file file_name="../hal/Src/stm32l4xx_hal_nand.c" />
+      <file file_name="../hal/Src/stm32l4xx_hal_nor.c" />
+      <file file_name="../hal/Src/stm32l4xx_hal_opamp.c" />
+      <file file_name="../hal/Src/stm32l4xx_hal_opamp_ex.c" />
+      <file file_name="../hal/Src/stm32l4xx_hal_ospi.c" />
+      <file file_name="../hal/Src/stm32l4xx_hal_pcd.c" />
+      <file file_name="../hal/Src/stm32l4xx_hal_pcd_ex.c" />
+      <file file_name="../hal/Src/stm32l4xx_hal_pka.c" />
+      <file file_name="../hal/Src/stm32l4xx_hal_pssi.c" />
+      <file file_name="../hal/Src/stm32l4xx_hal_pwr.c" />
+      <file file_name="../hal/Src/stm32l4xx_hal_pwr_ex.c" />
+      <file file_name="../hal/Src/stm32l4xx_hal_qspi.c" />
+      <file file_name="../hal/Src/stm32l4xx_hal_rcc.c" />
+      <file file_name="../hal/Src/stm32l4xx_hal_rcc_ex.c" />
+      <file file_name="../hal/Src/stm32l4xx_hal_rng.c" />
+      <file file_name="../hal/Src/stm32l4xx_hal_rng_ex.c" />
+      <file file_name="../hal/Src/stm32l4xx_hal_rtc.c" />
+      <file file_name="../hal/Src/stm32l4xx_hal_rtc_ex.c" />
+      <file file_name="../hal/Src/stm32l4xx_hal_sai.c" />
+      <file file_name="../hal/Src/stm32l4xx_hal_sai_ex.c" />
+      <file file_name="../hal/Src/stm32l4xx_hal_sd.c" />
+      <file file_name="../hal/Src/stm32l4xx_hal_sd_ex.c" />
+      <file file_name="../hal/Src/stm32l4xx_hal_smartcard.c" />
+      <file file_name="../hal/Src/stm32l4xx_hal_smartcard_ex.c" />
+      <file file_name="../hal/Src/stm32l4xx_hal_smbus.c" />
+      <file file_name="../hal/Src/stm32l4xx_hal_smbus_ex.c" />
+      <file file_name="../hal/Src/stm32l4xx_hal_spi.c" />
+      <file file_name="../hal/Src/stm32l4xx_hal_spi_ex.c" />
+      <file file_name="../hal/Src/stm32l4xx_hal_sram.c" />
+      <file file_name="../hal/Src/stm32l4xx_hal_swpmi.c" />
+      <file file_name="../hal/Src/stm32l4xx_hal_tim.c" />
+      <file file_name="../hal/Src/stm32l4xx_hal_tim_ex.c" />
+      <file file_name="../hal/Src/stm32l4xx_hal_timebase_tim_template.c" />
+      <file file_name="../hal/Src/stm32l4xx_hal_tsc.c" />
+      <file file_name="../hal/Src/stm32l4xx_hal_uart.c" />
+      <file file_name="../hal/Src/stm32l4xx_hal_uart_ex.c" />
+      <file file_name="../hal/Src/stm32l4xx_hal_usart.c" />
+      <file file_name="../hal/Src/stm32l4xx_hal_usart_ex.c" />
+      <file file_name="../hal/Src/stm32l4xx_hal_wwdg.c" />
+      <file file_name="../hal/Src/stm32l4xx_ll_adc.c" />
+      <file file_name="../hal/Src/stm32l4xx_ll_comp.c" />
+      <file file_name="../hal/Src/stm32l4xx_ll_crc.c" />
+      <file file_name="../hal/Src/stm32l4xx_ll_crs.c" />
+      <file file_name="../hal/Src/stm32l4xx_ll_dac.c" />
+      <file file_name="../hal/Src/stm32l4xx_ll_dma.c" />
+      <file file_name="../hal/Src/stm32l4xx_ll_dma2d.c" />
+      <file file_name="../hal/Src/stm32l4xx_ll_exti.c" />
+      <file file_name="../hal/Src/stm32l4xx_ll_fmc.c" />
+      <file file_name="../hal/Src/stm32l4xx_ll_gpio.c" />
+      <file file_name="../hal/Src/stm32l4xx_ll_i2c.c" />
+      <file file_name="../hal/Src/stm32l4xx_ll_lptim.c" />
+      <file file_name="../hal/Src/stm32l4xx_ll_lpuart.c" />
+      <file file_name="../hal/Src/stm32l4xx_ll_opamp.c" />
+      <file file_name="../hal/Src/stm32l4xx_ll_pka.c" />
+      <file file_name="../hal/Src/stm32l4xx_ll_pwr.c" />
+      <file file_name="../hal/Src/stm32l4xx_ll_rcc.c" />
+      <file file_name="../hal/Src/stm32l4xx_ll_rng.c" />
+      <file file_name="../hal/Src/stm32l4xx_ll_rtc.c" />
+      <file file_name="../hal/Src/stm32l4xx_ll_sdmmc.c" />
+      <file file_name="../hal/Src/stm32l4xx_ll_spi.c" />
+      <file file_name="../hal/Src/stm32l4xx_ll_swpmi.c" />
+      <file file_name="../hal/Src/stm32l4xx_ll_tim.c" />
+      <file file_name="../hal/Src/stm32l4xx_ll_usart.c" />
+      <file file_name="../hal/Src/stm32l4xx_ll_usb.c" />
+      <file file_name="../hal/Src/stm32l4xx_ll_utils.c" />
+    </folder>
+    <folder Name="System Files">
+      <file file_name="SEGGER_THUMB_Startup.s" />
+      <file file_name="STM32L4xx/Source/stm32l432xx_Vectors.s">
+        <configuration Name="Common" file_type="Assembly" />
+      </file>
+      <file file_name="STM32L4xx/Source/STM32L4xx_Startup.s" />
+    </folder>
+  </project>
+</solution>
