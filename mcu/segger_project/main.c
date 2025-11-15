@@ -5,11 +5,17 @@
 #include "ov7670.h"
 #include "xclk.h"
 #include "spi.h"
+#include "spi_control_handshake.h"
 
 static void LED_Init(void);
+static void ProcessFrame(uint8_t *buffer, uint16_t length);
 
-#define BUFFER_SIZE 9600
-uint8_t frame_buffer[BUFFER_SIZE] = {0};
+#define BUFFER_SIZE SPI_RX_BUFFER_BYTES
+ALIGN_32BYTES(uint8_t frame_buffer[BUFFER_SIZE]);
+
+static volatile uint32_t completed_frames = 0;
+static uint8_t midpoint_pixel = 0;
+static SpiControlHandshake spi_handshake;
 
 int main(void) {
     HAL_Init();
@@ -29,21 +35,50 @@ int main(void) {
 
     printf("Waiting for camera...\n");
     HAL_Delay(100);
-    SPI1_Receive_DMA(frame_buffer, BUFFER_SIZE);
+
+    SpiControlHandshake_Init(&spi_handshake, frame_buffer, BUFFER_SIZE);
+
+    if (SpiControlHandshake_BeginCapture(&spi_handshake) != HAL_OK) {
+        Error_Handler();
+    }
     OV7670_MinimalTest();
 
     HAL_Delay(500);
     printf("Press 'c' to configure camera or any key to repeat test...\n");
 
     uint32_t last_test = 0;
+    uint32_t last_led_toggle = 0;
 
     while (1) {
-        HAL_GPIO_TogglePin(GPIOB, GPIO_PIN_3);
-        HAL_Delay(500);
+        if (HAL_GetTick() - last_led_toggle > 250) {
+            last_led_toggle = HAL_GetTick();
+            HAL_GPIO_TogglePin(GPIOB, GPIO_PIN_3);
+        }
 
         if (HAL_GetTick() - last_test > 5000) {
             last_test = HAL_GetTick();
+            printf("Frames captured: %lu\n", (unsigned long)completed_frames);
             OV7670_MinimalTest();
+        }
+
+        SpiControlHandshake_Service(&spi_handshake);
+
+        uint8_t latest_midpoint = 0U;
+        if (SpiControlHandshake_TakeMidpoint(&spi_handshake, &latest_midpoint)) {
+            midpoint_pixel = latest_midpoint;
+        }
+
+        if (SpiControlHandshake_FrameReady(&spi_handshake)) {
+            ProcessFrame(frame_buffer, BUFFER_SIZE);
+            SpiControlHandshake_ReleaseFrame(&spi_handshake);
+
+            if (SpiControlHandshake_BeginCapture(&spi_handshake) != HAL_OK) {
+                Error_Handler();
+            }
+        }
+
+        if (SpiControlHandshake_InError(&spi_handshake)) {
+            Error_Handler();
         }
     }
 }
@@ -102,4 +137,19 @@ static void LED_Init(void) {
     led.Pull = GPIO_NOPULL;
     led.Speed = GPIO_SPEED_FREQ_LOW;
     HAL_GPIO_Init(GPIOB, &led);
+}
+
+static void ProcessFrame(uint8_t *buffer, uint16_t length)
+{
+    (void)buffer;
+    (void)length;
+
+    completed_frames++;
+
+    /* Example hook: make LED reflect the mid-pixel brightness */
+    if (midpoint_pixel > 0x80U) {
+        HAL_GPIO_WritePin(GPIOB, GPIO_PIN_3, GPIO_PIN_SET);
+    } else {
+        HAL_GPIO_WritePin(GPIOB, GPIO_PIN_3, GPIO_PIN_RESET);
+    }
 }
