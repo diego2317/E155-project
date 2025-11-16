@@ -13,7 +13,7 @@
 #define REG_VER   0x0B  // Product ID LSB (should be 0x73)
 #define REG_COM7  0x12  // Common Control 7
 #define COM7_RESET 0x80
-#define COM7_QVGA  0x40
+#define COM7_QVGA  0x10  // CORRECTED: Bit[4] for QVGA
 #define COM7_YUV   0x00
 
 typedef struct {

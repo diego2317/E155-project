@@ -6,9 +6,11 @@
 // Basic QVGA YUV422 configuration
 static const camera_reg ov7670_config[] = {
     {REG_COM7, COM7_RESET},  // Reset
-    {0xFF, 100},             // Delay 100ms
-    {0x11, 0x01},            // Clock prescaler
-    {REG_COM7, COM7_YUV | COM7_QVGA},  // QVGA YUV
+    {0xFF, 100},              // Delay 100ms
+    {0x11, 0x01},  // Clock prescaler
+    {REG_COM7, COM7_YUV | COM7_QVGA}, // corrected QVGA YUV 30 fps format register config in the header file
+    {0x0C, 0x04},  // COM3: Enable scaling 
+    {0x3E, 0x19},  // COM14: PCLK scaling
     {0x32, 0x80},  // HREF
     {0x17, 0x16},  // HSTART
     {0x18, 0x04},  // HSTOP
@@ -19,6 +21,7 @@ static const camera_reg ov7670_config[] = {
     {0x71, 0x35},  // Y scaling
     {0x72, 0x11},  // Downsample by 2
     {0x73, 0xF1},  // Clock divide
+    {0xA2, 0x02},  // PCLK delay
     {0x15, 0x00},  // COM10
     {0x3A, 0x04},  // TSLB
     {0x12, 0x00},  // COM7
@@ -35,6 +38,7 @@ static const camera_reg ov7670_config[] = {
     {0x58, 0x9E},  // MTXS
     {0xFF, 0xFF}   // End marker
 };
+
 
 // I2C handle comes from bsp_i2c.c
 extern I2C_HandleTypeDef hi2c1;
