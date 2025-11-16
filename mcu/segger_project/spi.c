@@ -82,7 +82,7 @@ static void SPI1_DMA_Init(void)
 
     /* Configure DMA to push the incoming pixels directly into RAM */
     hdma_spi1_rx.Instance = DMA2_Channel3;
-    hdma_spi1_rx.Init.Request = DMA_REQUEST_SPI1_RX;
+    hdma_spi1_rx.Init.Request = 0U;
     hdma_spi1_rx.Init.Direction = DMA_PERIPH_TO_MEMORY;
     hdma_spi1_rx.Init.PeriphInc = DMA_PINC_DISABLE;
     hdma_spi1_rx.Init.MemInc = DMA_MINC_ENABLE;

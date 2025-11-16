@@ -7,6 +7,10 @@
 
 #define SPI_RX_BUFFER_BYTES 9600U
 
+#ifndef ALIGN_32BYTES
+#define ALIGN_32BYTES(x) x __attribute__((aligned(32)))
+#endif
+
 extern SPI_HandleTypeDef hspi1;
 extern DMA_HandleTypeDef hdma_spi1_rx;
 

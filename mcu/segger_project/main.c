@@ -26,12 +26,11 @@ int main(void) {
     I2C1_Init();
     LED_Init();
     SPI1_Init();
+    HAL_Delay(100);
+    printf("Initializing camera...\n");
+    OV7670_MinimalTest();
 
-    printf("\n\n");
-    printf("========================================\n");
-    printf("  OV7670 Camera Test for Line Follower\n");
-    printf("  STM32L432KC\n");
-    printf("========================================\n");
+    
 
     printf("Waiting for camera...\n");
     HAL_Delay(100);
@@ -41,7 +40,7 @@ int main(void) {
     if (SpiControlHandshake_BeginCapture(&spi_handshake) != HAL_OK) {
         Error_Handler();
     }
-    OV7670_MinimalTest();
+    //OV7670_Init();
 
     HAL_Delay(500);
     printf("Press 'c' to configure camera or any key to repeat test...\n");
@@ -58,7 +57,7 @@ int main(void) {
         if (HAL_GetTick() - last_test > 5000) {
             last_test = HAL_GetTick();
             printf("Frames captured: %lu\n", (unsigned long)completed_frames);
-            OV7670_MinimalTest();
+            //OV7670_MinimalTest();
         }
 
         SpiControlHandshake_Service(&spi_handshake);

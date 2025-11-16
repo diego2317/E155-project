@@ -73,7 +73,7 @@ void OV7670_MinimalTest(void) {
     // Test 1: Read Product ID
     status = OV7670_ReadReg(REG_PID, &pid);
     if (status == HAL_OK) {
-        printf("Product ID MSB: 0x%02X ", pid);
+        printf("Product ID MSB: 0x%02hhX\n", pid);
         if (pid == 0x76) {
             printf("[OK]\n");
         } else {
@@ -92,7 +92,7 @@ void OV7670_MinimalTest(void) {
     // Test 2: Read Version
     status = OV7670_ReadReg(REG_VER, &ver);
     if (status == HAL_OK) {
-        printf("Product ID LSB: 0x%02X ", ver);
+        printf("Product ID LSB: 0x%02X ", (unsigned int)ver);
         if (ver == 0x73) {
             printf("[OK]\n\n");
         } else {
@@ -106,13 +106,13 @@ void OV7670_MinimalTest(void) {
     // Test 3: Read/Write test
     printf("Testing register write...\n");
     OV7670_ReadReg(REG_COM7, &com7);
-    printf("  COM7 before: 0x%02X\n", com7);
+    printf("  COM7 before: 0x%02X\n", (unsigned int)com7);
     
-    OV7670_WriteReg(REG_COM7, 0x80);  // Reset
+    OV7670_WriteReg(REG_COM7, 0x10);  // Reset
     HAL_Delay(10);
     
     OV7670_ReadReg(REG_COM7, &com7);
-    printf("  COM7 after reset: 0x%02X\n\n", com7);
+    printf("  COM7 after reset: 0x%02X\n\n", (unsigned int)com7);
     
     printf("=== Test Complete ===\n");
     if (pid == 0x76 && ver == 0x73) {
@@ -148,7 +148,8 @@ int OV7670_Init(void) {
     // Verify configuration
     uint8_t com7;
     OV7670_ReadReg(REG_COM7, &com7);
-    //printf("COM7 = 0x%02X (QVGA YUV mode)\n\n", com7);
+    printf("COM7 should be 0X010000 \n");
+    printf("COM7 = 0x%02hhX (QVGA YUV mode)\n\n", com7);
     
     return 0;
 }
