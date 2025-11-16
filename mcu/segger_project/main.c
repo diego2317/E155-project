@@ -4,8 +4,12 @@
 #include "i2c.h"
 #include "ov7670.h"
 #include "xclk.h"
+#include "spi.h"
 
 static void LED_Init(void);
+
+#define BUFFER_SIZE 9600
+uint8_t frame_buffer[BUFFER_SIZE] = {0};
 
 int main(void) {
     HAL_Init();
@@ -15,6 +19,7 @@ int main(void) {
     UART2_Init();
     I2C1_Init();
     LED_Init();
+    SPI1_Init();
 
     printf("\n\n");
     printf("========================================\n");
@@ -24,7 +29,7 @@ int main(void) {
 
     printf("Waiting for camera...\n");
     HAL_Delay(100);
-
+    SPI1_Receive_DMA(frame_buffer, BUFFER_SIZE);
     OV7670_MinimalTest();
 
     HAL_Delay(500);
