@@ -39,6 +39,22 @@ static const camera_reg ov7670_config[] = {
     {0xFF, 0xFF}   // End marker
 };
 
+// Provided configuration setup from implementation guide
+static const camera_reg ov7670_qvga_yuv[] = {
+    {REG_COM7, COM7_RESET},  // Reset
+    {0xFF, 100},              // Delay 100ms
+    {0x11, 0x01}, // CLKRC
+    {REG_COM7, 0x00}, // COM7
+    {0x0C, 0x04}, // COM3
+    {0x3E, 0x19}, // COM14
+    {0x70, 0x3A}, // SCALING_XSC
+    {0x71, 0x35}, // SCALING_YSC
+    {0x72, 0x11}, // SCALING_DCWCTR
+    {0x73, 0xF1}, // SCALING_PCLK_DIV
+    {0xA2, 0x02}, // SCALING_PCLK_DELAY
+    {0xFF, 0xFF} // End marker
+};
+
 
 // I2C handle comes from bsp_i2c.c
 extern I2C_HandleTypeDef hi2c1;
@@ -123,6 +139,43 @@ void OV7670_MinimalTest(void) {
         printf("SUCCESS! Camera communication working!\n");
         printf("Ready for full configuration.\n\n");
     }
+}
+
+// Return -1 if camera init failed,
+int  OV7670_QVGA_YUV_Init(void) {
+    int i = 0;
+
+    // Write configuration registers
+    while (ov7670_qvga_yuv[i].reg != 0xFF || ov7670_qvga_yuv[i].value != 0xFF) {
+        if (ov7670_qvga_yuv[i].reg == 0xFF) {
+            // Delay marker
+            HAL_Delay(ov7670_qvga_yuv[i].value);
+        } else {
+            if (OV7670_WriteReg(ov7670_qvga_yuv[i].reg, 
+                               ov7670_qvga_yuv[i].value) != HAL_OK) {
+                return -1;
+            }
+        }
+        i++;
+    }
+
+    // read back through registers and verify
+    i = 0;
+    while (ov7670_qvga_yuv[i].reg != 0xFF || ov7670_qvga_yuv[i].value != 0xFF) {
+        if (ov7670_qvga_yuv[i].reg != 0xFF) {  // skip delay markers
+            uint8_t read_val = 0;
+
+            if (OV7670_ReadReg(ov7670_qvga_yuv[i].reg, &read_val) != HAL_OK) {
+                return -2;  // read error
+            }
+
+            if (read_val != ov7670_qvga_yuv[i].value) {
+                return -3;  // verify failed
+            }
+        }
+        i++;
+    }
+    return 0; // success!
 }
 
 // Full camera initialization

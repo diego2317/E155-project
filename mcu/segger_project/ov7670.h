@@ -26,5 +26,6 @@ HAL_StatusTypeDef OV7670_ReadReg(uint8_t reg, uint8_t *value);
 HAL_StatusTypeDef OV7670_WriteReg(uint8_t reg, uint8_t value);
 void OV7670_MinimalTest(void);
 int  OV7670_Init(void);
+int  OV7670_QVGA_YUV_Init(void);
 
 #endif // OV7670_H

@@ -28,7 +28,10 @@ int main(void) {
     SPI1_Init();
     HAL_Delay(100);
     printf("Initializing camera...\n");
-    OV7670_MinimalTest();
+    int i = OV7670_QVGA_YUV_Init();
+    while (i != 0) {
+        i = OV7670_QVGA_YUV_Init(); // keep trying lmao
+    }
 
     
 
