@@ -21,66 +21,84 @@ int main(void) {
     HAL_Init();
     SystemClock_Config();
 
-    XCLK_Init();
+    //XCLK_Init();
     UART2_Init();
     I2C1_Init();
     LED_Init();
     SPI1_Init();
     HAL_Delay(100);
-    printf("Initializing camera...\n");
-    int i = OV7670_QVGA_YUV_Init();
-    while (i != 0) {
-        i = OV7670_QVGA_YUV_Init(); // keep trying lmao
-    }
+    // Start XCLK FIRST
+    printf("Starting XCLK (10MHz on PA11)...\n");
+    XCLK_Init();
+    HAL_Delay(300);
+    printf("✓ XCLK running\n\n");
+    
+    //while (i != 0) {
+    //    i = OV7670_QVGA_YUV_Init(); // keep trying lmao
+    //    printf("OV7670 Config failed, trying again...");
+    //}
 
     
 
-    printf("Waiting for camera...\n");
-    HAL_Delay(100);
-
-    SpiControlHandshake_Init(&spi_handshake, frame_buffer, BUFFER_SIZE);
-
-    if (SpiControlHandshake_BeginCapture(&spi_handshake) != HAL_OK) {
-        Error_Handler();
+    
+    // Check camera
+    printf("Checking camera...\n");
+    uint8_t pid, ver;
+    int retry = 0;
+    while (retry < 3) {
+        if (OV7670_ReadReg(0x0A, &pid) == HAL_OK && 
+            OV7670_ReadReg(0x0B, &ver) == HAL_OK &&
+            pid == 0x76 && ver == 0x73) {
+            printf("✓ Camera detected (PID=0x%02X, VER=0x%02X)\n\n", pid, ver);
+            break;
+        }
+        retry++;
+        printf("  Retry %d...\n", retry);
+        HAL_Delay(200);
     }
-    //OV7670_Init();
-
+    
+    if (retry >= 3) {
+        printf("✗ Camera not responding!\n");
+        while(1) { 
+            HAL_GPIO_TogglePin(GPIOB, GPIO_PIN_3); 
+            HAL_Delay(100); 
+        }
+    }
+    
+    // Configure camera
+    printf("Configuring camera...\n");
     HAL_Delay(500);
-    printf("Press 'c' to configure camera or any key to repeat test...\n");
-
-    uint32_t last_test = 0;
-    uint32_t last_led_toggle = 0;
-
+    
+    if (OV7670_Init_QVGA() == 0) {
+        printf("Waiting for video output (1 second)...\n");
+        HAL_Delay(1000);
+        
+        Camera_ShowCurrentConfig();
+        Camera_SignalTest();
+        Camera_MeasureFrameRate();
+        Camera_VerifyFormat();
+        Camera_VerifyFormat();
+    } else {
+        printf("Configuration failed!\n\n");
+    }
+    
+    printf("╔════════════════════════════════════════╗\n");
+    printf("║  Monitoring Loop Active                ║\n");
+    printf("║  LED blinks = MCU alive                ║\n");
+    printf("║  Tests every 20 seconds                ║\n");
+    printf("╚════════════════════════════════════════╝\n\n");
+    
     while (1) {
-        if (HAL_GetTick() - last_led_toggle > 250) {
-            last_led_toggle = HAL_GetTick();
-            HAL_GPIO_TogglePin(GPIOB, GPIO_PIN_3);
-        }
-
-        if (HAL_GetTick() - last_test > 5000) {
-            last_test = HAL_GetTick();
-            printf("Frames captured: %lu\n", (unsigned long)completed_frames);
-            //OV7670_MinimalTest();
-        }
-
-        SpiControlHandshake_Service(&spi_handshake);
-
-        uint8_t latest_midpoint = 0U;
-        if (SpiControlHandshake_TakeMidpoint(&spi_handshake, &latest_midpoint)) {
-            midpoint_pixel = latest_midpoint;
-        }
-
-        if (SpiControlHandshake_FrameReady(&spi_handshake)) {
-            ProcessFrame(frame_buffer, BUFFER_SIZE);
-            SpiControlHandshake_ReleaseFrame(&spi_handshake);
-
-            if (SpiControlHandshake_BeginCapture(&spi_handshake) != HAL_OK) {
-                Error_Handler();
-            }
-        }
-
-        if (SpiControlHandshake_InError(&spi_handshake)) {
-            Error_Handler();
+        HAL_GPIO_TogglePin(GPIOB, GPIO_PIN_3);
+        HAL_Delay(500);
+        
+        static uint32_t last = 0;
+        if (HAL_GetTick() - last > 20000) {
+            last = HAL_GetTick();
+            printf("\n▼▼▼ Periodic Check ▼▼▼\n\n");
+            Camera_ShowCurrentConfig();
+            Camera_SignalTest();
+            Camera_MeasureFrameRate();
         }
     }
 }

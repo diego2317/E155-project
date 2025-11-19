@@ -16,16 +16,31 @@
 #define COM7_QVGA  0x10  // CORRECTED: Bit[4] for QVGA
 #define COM7_YUV   0x00
 
+// Camera control pins
+#define CAM_VSYNC_PIN  GPIO_PIN_8
+#define CAM_VSYNC_PORT GPIOA
+#define CAM_HREF_PIN   GPIO_PIN_9
+#define CAM_HREF_PORT  GPIOA
+#define CAM_PCLK_PIN   GPIO_PIN_10
+#define CAM_PCLK_PORT  GPIOA
+
+// Register configuration structure
 typedef struct {
     uint8_t reg;
     uint8_t value;
+    uint16_t delay_ms;
+    char description[35];
 } camera_reg;
+
 
 // Public API
 HAL_StatusTypeDef OV7670_ReadReg(uint8_t reg, uint8_t *value);
 HAL_StatusTypeDef OV7670_WriteReg(uint8_t reg, uint8_t value);
-void OV7670_MinimalTest(void);
-int  OV7670_Init(void);
-int  OV7670_QVGA_YUV_Init(void);
+int  OV7670_Init_QVGA(void);
+void Camera_ControlPins_Init(void);
+void Camera_SignalTest(void);
+void Camera_MeasureFrameRate(void);
+void Camera_ShowCurrentConfig(void);
+void Camera_VerifyFormat(void);
 
 #endif // OV7670_H
