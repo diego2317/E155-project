@@ -1,0 +1,1 @@
+C:/lscc/radiant/2024.2/questasim/win64/VisualizerRls/bin/viscom.exe -nolock -quiet -jmem_size 393216 work.tb_top_integration iCE40UP.HSOSC -quiet -auto_acc_if_foreign -work work +acc -allow_unnamed -o _opt -id 1-00be43e570c5-691d3348-30d-b88 +__design_bin_path+C:/Users/dweiss/Documents/GitHub/E155-project/fpga/radiant_project/project +__betafsm

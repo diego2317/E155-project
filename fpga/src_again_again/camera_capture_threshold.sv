@@ -5,20 +5,18 @@
 module camera_capture_threshold (
     input  wire cam_pclk,           // Camera pixel clock domain (1.25-2.5 MHz)
     input  wire nreset,
-   
-    // Camera inputs
+    // CAmera inputs
     input  wire cam_vsync,          // HIGH=idle, LOW=active frame
     input  wire cam_href,           // HIGH=valid pixel data
     input  wire [7:0] cam_data,     // YUV422 pixel data
-   
     // Threshold (from system clock domain, but stable)
     input  wire [7:0] threshold,
-   
     // Output to SPRAM (cam_pclk domain)
     output reg [16:0] wr_addr,      // Pixel address (0-76799 for 320x240)
     output wire wr_data,            // 1-bit bitmask (thresholded) - combinational
     output reg wr_en,               // Write enable
-    output reg frame_done           // Pulse when frame complete
+    output reg frame_done,           // Pulse when frame complete
+	output reg in_frame
 );
 
     // Pipeline register for camera signals
@@ -43,7 +41,7 @@ module camera_capture_threshold (
    
     // Edge detection on synchronized signals
     // VSYNC: HIGH when idle, LOW during frame transmission
-    // Frame starts on FALLING edge (HIGH→LOW)
+    // Frame starts on FALLING edge (HIGHâ†’LOW)
     wire vsync_falling = !cam_vsync && vsync_d1;
     wire vsync_rising = cam_vsync && !vsync_d1;
     wire href_valid = href_d1;      // Use href_d1 to match data_d1 timing
@@ -72,7 +70,7 @@ module camera_capture_threshold (
             frame_done <= 1'b0;     // Default: pulse, not level
             wr_en <= 1'b0;          // Default: no write
            
-            // Start of new frame - VSYNC falling edge (HIGH→LOW)
+            // Start of new frame - VSYNC falling edge (HIGHâ†’LOW)
             if (vsync_falling) begin
                 pixel_count <= 9'd0;
                 line_count <= 8'd0;
@@ -81,7 +79,7 @@ module camera_capture_threshold (
                 in_frame <= 1'b1;
             end
            
-            // End of frame - VSYNC rising edge (LOW→HIGH)
+            // End of frame - VSYNC rising edge (LOWâ†’HIGH)
             else if (vsync_rising && in_frame) begin
                 in_frame <= 1'b0;
                 frame_done <= 1'b1;
