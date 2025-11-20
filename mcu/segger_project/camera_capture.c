@@ -43,7 +43,7 @@ void capture_frame(void)
         
         // Detect PCLK Rising Edge (Current High && Previous Low)
         // We use bitwise logic strictly on registers here
-        if ((gpio_state & PCLK_PIN) && !(prev_gpio & PCLK_PIN))
+        if (!(gpio_state & PCLK_PIN) && (prev_gpio & PCLK_PIN))
         {
             // Check if data is valid (HREF/Write Enable)
             if (gpio_state & DATA_VALID_PIN)

@@ -55,22 +55,24 @@ int main(void)
     // 2. Continuous Capture Loop 
     while (1)
     {
-        printf("Waiting for next frame...\r\n");
+        //printf("Waiting for next frame...\r\n");
         uint32_t start_time = HAL_GetTick();
        
         capture_frame();
        
         uint32_t capture_time = HAL_GetTick() - start_time;
-        if (pixel_count == IMAGE_SIZE_PIXELS) {
+        if (pixel_count >= 76000) {
             printf("Frame captured! %d pixels in %d ms\r\n\r\n", pixel_count, capture_time); 
             // Analyze and display results
             visualize_image_compact();
-            visualize_image_line_stats();
+            //visualize_image_line_stats();
+           // HAL_GPIO_TogglePin(GPIOB, GPIO_PIN_3);
         } else {
             printf("Capture Error: Only received %d pixels.\r\n", pixel_count);
+           // HAL_GPIO_TogglePin(GPIOB, GPIO_PIN_3);
         }
        
-        HAL_Delay(500);
+        //HAL_Delay(500);
     }
 }
 
@@ -96,12 +98,12 @@ void XCLK_Init(void) {
     htim1.Instance = TIM1;
     htim1.Init.Prescaler = 0;
     htim1.Init.CounterMode = TIM_COUNTERMODE_UP;
-    htim1.Init.Period = 7; // For 10MHz XCLK @ 80MHz SYSCLK  62]
+    htim1.Init.Period = 7; // For 10MHz XCLK @ 80MHz SYSCLK
     htim1.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
     HAL_TIM_PWM_Init(&htim1);
 
     sConfigOC.OCMode = TIM_OCMODE_PWM1;
-    sConfigOC.Pulse = 4;
+    sConfigOC.Pulse = 4; // 50% duty cycle
     sConfigOC.OCPolarity = TIM_OCPOLARITY_HIGH;
     HAL_TIM_PWM_ConfigChannel(&htim1, &sConfigOC, TIM_CHANNEL_4);
 
@@ -170,6 +172,13 @@ void GPIO_Capture_Init(void) {
     GPIO_InitStruct.Pull = GPIO_PULLDOWN; // Keep lines low if FPGA is disconnected
     GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_VERY_HIGH;
     HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
+    GPIO_InitTypeDef GPIO_InitStruc = {0};
+    GPIO_InitStruc.Pin = GPIO_PIN_3;
+    GPIO_InitStruc.Pull = GPIO_NOPULL;
+    GPIO_InitStruc.Mode = GPIO_MODE_OUTPUT_PP;
+    GPIO_InitStruc.Speed = GPIO_SPEED_FREQ_HIGH;
+    HAL_GPIO_Init(GPIOB, &GPIO_InitStruc);
+
 }
 
 void SystemClock_Config(void) {

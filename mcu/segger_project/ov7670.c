@@ -10,10 +10,10 @@ extern uint8_t frame_buffer[SPI_RX_BUFFER_BYTES];
 // YOUR QVGA CONFIG - FIXED (removed the duplicate COM7=0x00 write!)
 static const camera_reg ov7670_qvga_yuv[] = {
     {0x12, 0x80, 500, "Reset"},
-    {0x11, 0x00, 20, "CLKRC: /1"}, // i changed it to divide by 1 from Ox01, to ox00
-    {0x12, 0x10, 100, "COM7: QVGA+YUV"},  // Set QVGA
+    {0x11, 0x01, 20, "CLKRC: /1"}, // i changed it to divide by 1 from Ox01, to ox00
+    {0x12, 0x00, 100, "COM7: QVGA+YUV"},  // Set QVGA
     {0x0C, 0x04, 20, "COM3: Scaling"},
-    {0x3E, 0x00, 20, "COM14: PCLK scaling"}, // i changed this to ox00 from ox19
+    {0x3E, 0x19, 20, "COM14: PCLK scaling"}, // i changed this to ox00 from ox19
     {0x32, 0x80, 10, "HREF"},
     {0x17, 0x16, 10, "HSTART"},
     {0x18, 0x04, 10, "HSTOP"},
