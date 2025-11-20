@@ -26,5 +26,6 @@
 #define IMAGE_HEIGHT       240
 #define IMAGE_SIZE_PIXELS  76800
 #define IMAGE_SIZE_BYTES   9600 // (320 * 240) / 8
+#define DMA_RAW_BUFFER_SIZE  2048
 
 #endif // CONFIG_H
