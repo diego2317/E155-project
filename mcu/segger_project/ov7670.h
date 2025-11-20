@@ -39,6 +39,7 @@ HAL_StatusTypeDef OV7670_WriteReg(uint8_t reg, uint8_t value);
 int  OV7670_Init_QVGA(void);
 void Camera_ControlPins_Init(void);
 void Camera_SignalTest(void);
+void Camera_MeasureFrameRate_VSYNC(void);
 void Camera_MeasureFrameRate(void);
 void Camera_ShowCurrentConfig(void);
 void Camera_VerifyFormat(void);

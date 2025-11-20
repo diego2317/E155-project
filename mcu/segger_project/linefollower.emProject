@@ -60,6 +60,7 @@
     </folder>
     <folder Name="Source Files">
       <configuration Name="Common" filter="c;cpp;cxx;cc;h;s;asm;inc" />
+      <file file_name="gpio.c" />
       <file file_name="i2c.c" />
       <file file_name="main.c" />
       <file file_name="ov7670.c" />

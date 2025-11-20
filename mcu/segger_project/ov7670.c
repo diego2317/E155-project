@@ -1,7 +1,11 @@
 #include "ov7670.h"
 #include "i2c.h"
 #include "uart.h"   // for printf via UART
+#include "spi.h"
 #include <stdio.h>
+
+/* Frame buffer allocated in main.c */
+extern uint8_t frame_buffer[SPI_RX_BUFFER_BYTES];
 
 // YOUR QVGA CONFIG - FIXED (removed the duplicate COM7=0x00 write!)
 static const camera_reg ov7670_qvga_yuv[] = {
@@ -115,19 +119,19 @@ int OV7670_Init_QVGA(void) {
                 
                 if (OV7670_ReadReg(ov7670_qvga_yuv[i].reg, &readback) == HAL_OK) {
                     if (readback == ov7670_qvga_yuv[i].value) {
-                        printf("✓\n");
+                        printf("!!\n");
                     } else {
-                        printf("⚠ (read 0x%02X)\n", readback);
+                        printf("(read 0x%02X)\n", readback);
                     }
                 } else {
-                    printf("✓\n");
+                    printf("!!\n");
                 }
             } else {
-                printf("✓ (reset)\n");
+                printf("!! (reset)\n");
             }
             success++;
         } else {
-            printf("✗ FAIL\n");
+            printf("X FAIL\n");
         }
         
         if (ov7670_qvga_yuv[i].delay_ms > 0) {
@@ -153,20 +157,20 @@ int OV7670_Init_QVGA(void) {
     printf("Critical Registers:\n");
     printf("----------------------\n");
     printf("COM7  (0x12) = 0x%02X  %s\n", com7, 
-           (com7 == 0x10) ? "✓✓✓ QVGA MODE!" : "✗ NOT 0x10");
+           (com7 == 0x10) ? "!!!!!! QVGA MODE!" : "X NOT 0x10");
     printf("COM3  (0x0C) = 0x%02X  %s\n", com3,
-           (com3 == 0x04) ? "✓ Scaling ON" : "⚠");
+           (com3 == 0x04) ? "!! Scaling ON" : "");
     printf("COM14 (0x3E) = 0x%02X  %s\n", com14,
-           (com14 == 0x19) ? "✓ PCLK scaling" : "⚠");
+           (com14 == 0x19) ? "!! PCLK scaling" : "");
     printf("CLKRC (0x11) = 0x%02X  %s\n", clkrc,
-           (clkrc == 0x01) ? "✓ Clock /2" : "⚠");
+           (clkrc == 0x01) ? "!! Clock /2" : "");
     printf("----------------------\n\n");
     
     if (com7 == 0x10) {
-        printf("✓✓✓ CONFIGURATION SUCCESS! ✓✓✓\n\n");
+        printf("!!!!!! CONFIGURATION SUCCESS! !!!!!!\n\n");
         return 0;
     } else {
-        printf("✗ Configuration failed (COM7 wrong)\n\n");
+        printf("X Configuration failed (COM7 wrong)\n\n");
         return -1;
     }
 }
@@ -235,38 +239,38 @@ void Camera_SignalTest(void) {
     
     printf("PCLK:  %7d transitions ", pclk_count);
     if (pclk_count > 5000) {
-        printf("✓✓✓ ACTIVE!\n");
+        printf("!!!!!! ACTIVE!\n");
     } else if (pclk_count > 500) {
         printf("⚠ SLOW\n");
     } else {
-        printf("✗ NONE\n");
+        printf("X NONE\n");
     }
     
     printf("HREF:  %7d transitions ", href_count);
     if (href_count > 200) {
-        printf("✓✓✓ ACTIVE!\n");
+        printf("!!!!!! ACTIVE!\n");
     } else if (href_count > 20) {
-        printf("⚠ SLOW\n");
+        printf("SLOW\n");
     } else {
-        printf("✗ NONE\n");
+        printf("X NONE\n");
     }
     
     printf("VSYNC: %7d transitions ", vsync_count);
     if (vsync_count >= 6) {
-        printf("✓✓✓ ACTIVE!\n");
+        printf("!!!!!! ACTIVE!\n");
     } else if (vsync_count > 0) {
-        printf("⚠ SLOW\n");
+        printf("SLOW\n");
     } else {
-        printf("✗ NONE\n");
+        printf("X NONE\n");
     }
     
     printf("----------------------\n");
     
     if (pclk_count > 5000 && href_count > 200) {
-        printf("\n✓✓✓ VIDEO OUTPUT DETECTED! ✓✓✓\n");
+        printf("\n!!!!!! VIDEO OUTPUT DETECTED! !!!!!!\n");
         printf("Camera is working - ready for FPGA!\n\n");
     } else if (pclk_count == 0 && href_count == 0) {
-        printf("\n✗ NO VIDEO OUTPUT\n\n");
+        printf("\nX NO VIDEO OUTPUT\n\n");
         printf("Hardware checklist:\n");
         printf("  [ ] PWDN pin grounded or floating?\n");
         printf("  [ ] XCLK actually reaching camera sensor?\n");
@@ -280,8 +284,69 @@ void Camera_SignalTest(void) {
     printf("----------------------\n\n");
 }
 
+// Measure frame rate based on full frames received over SPI (DMA)
+void Camera_MeasureFrameRate(void)
+{
+    printf("Measuring frame rate from SPI stream (3 seconds).\n");
+
+    const uint32_t window_ms = 3000U;
+    uint32_t start_ms = HAL_GetTick();
+    int frames = 0;
+
+    while ((HAL_GetTick() - start_ms) < window_ms) {
+        /* Start DMA RX for one full 1-bit QVGA frame (9600 bytes) */
+        if (SPI1_Receive_DMA(frame_buffer, SPI_RX_BUFFER_BYTES) != HAL_OK) {
+            printf("X SPI DMA start failed\n");
+            break;
+        }
+
+        bool timeout = false;
+
+        /* Wait for this frame's DMA transfer to complete or time window to expire */
+        while (!spi_rx_full_complete && !spi_rx_error) {
+            if ((HAL_GetTick() - start_ms) >= window_ms) {
+                timeout = true;
+                SPI1_Stop_DMA();
+                break;
+            }
+        }
+
+        if (timeout) {
+            /* Measurement window ended mid-frame; do not count this one */
+            break;
+        }
+
+        if (spi_rx_error) {
+            printf("X SPI RX error during frame-rate measurement\n");
+            break;
+        }
+
+        /* A full SPI frame has been received */
+        frames++;
+    }
+
+    uint32_t elapsed_ms = HAL_GetTick() - start_ms;
+    if (elapsed_ms == 0U) {
+        elapsed_ms = 1U;  // avoid divide-by-zero
+    }
+
+    float fps = (frames * 1000.0f) / (float)elapsed_ms;
+
+    printf("Result: %d frames in %lu ms = %.1f fps\n",
+           frames, (unsigned long)elapsed_ms, fps);
+
+    if (frames == 0) {
+        printf("X No frames received over SPI\n\n");
+    } else if (fps >= 45.0f && fps <= 90.0f) {
+        printf("!! Frame rate is good!\n\n");
+    } else {
+        printf("⚠ Unusual frame rate\n\n");
+    }
+}
+
+
 // Measure frame rate
-void Camera_MeasureFrameRate(void) {
+void Camera_MeasureFrameRate_VSYNC(void) {
     printf("Measuring frame rate (3 seconds)...\n");
     
     int frames = 0;
@@ -297,11 +362,11 @@ void Camera_MeasureFrameRate(void) {
     printf("Result: %d frames in 3s = %.1f fps\n", frames, frames/3.0f);
     
     if (frames >= 45 && frames <= 90) {
-        printf("✓ Frame rate is good!\n\n");
+        printf("!! Frame rate is good!\n\n");
     } else if (frames > 0) {
         printf("⚠ Unusual frame rate\n\n");
     } else {
-        printf("✗ No frames\n\n");
+        printf("X No frames\n\n");
     }
 }
 

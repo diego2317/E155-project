@@ -63,14 +63,14 @@ static void SPI1_GPIO_Init(void)
 
     __HAL_RCC_GPIOA_CLK_ENABLE();
 
-    /* SPI1 SCK: PA5, MISO: PA6
+    /* SPI1 SCK: PB3, MISO: PB4
        (MOSI PA7 is unused in master RX-only mode) */
-    GPIO_InitStruct.Pin = GPIO_PIN_5 | GPIO_PIN_6;
+    GPIO_InitStruct.Pin = GPIO_PIN_3 | GPIO_PIN_4;
     GPIO_InitStruct.Mode = GPIO_MODE_AF_PP;
     GPIO_InitStruct.Pull = GPIO_NOPULL;
     GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_VERY_HIGH;
     GPIO_InitStruct.Alternate = GPIO_AF5_SPI1;
-    HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
+    HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
 }
 
 static void SPI1_DMA_Init(void)
