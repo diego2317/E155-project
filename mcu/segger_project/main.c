@@ -68,7 +68,7 @@ int main(void)
             //visualize_image_line_stats();
            // HAL_GPIO_TogglePin(GPIOB, GPIO_PIN_3);
         } else {
-            printf("Capture Error: Only received %d pixels.\r\n", pixel_count);
+            //printf("Capture Error: Only received %d pixels.\r\n", pixel_count);
            // HAL_GPIO_TogglePin(GPIOB, GPIO_PIN_3);
         }
        

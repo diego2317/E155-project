@@ -42,7 +42,7 @@ void visualize_image_compact(void)
         printf("%3d: ", y);
         for (uint16_t x = 0; x < IMAGE_WIDTH; x += 2) {
             uint8_t pixel = get_pixel(x, y);
-            printf("%c", pixel ? '#' : ' ');
+            printf("%c", pixel ? ' ' : '#');
         }
         printf("\r\n");
     }
