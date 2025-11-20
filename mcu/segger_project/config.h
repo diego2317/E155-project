@@ -13,10 +13,10 @@
 
 // Camera control pins for the streaming interface from FPGA (Input to MCU)
 // PIXEL_DATA_PIN MOVED TO PA4 TO AVOID UART TX (PA2) CONFLICT
-#define PCLK_PIN           GPIO_PIN_10  // PA10
-#define DATA_VALID_PIN     GPIO_PIN_9  // PA9, Corresponds to FPGA's cam_wr_en
-#define FRAME_ACTIVE_PIN   GPIO_PIN_5  // PA5 Corresponds to FPGA's in_frame
-#define PIXEL_DATA_PIN     GPIO_PIN_6  // PA10, Corresponds to FPGA's cam_wr_data
+#define PCLK_PIN           GPIO_PIN_9  // PA5
+#define DATA_VALID_PIN     GPIO_PIN_5  // PA9, Corresponds to FPGA's cam_wr_en
+#define FRAME_ACTIVE_PIN   GPIO_PIN_10  // PA10 Corresponds to FPGA's in_frame
+#define PIXEL_DATA_PIN     GPIO_PIN_6  // PA6, Corresponds to FPGA's cam_wr_data
 
 // ============================================================================
 // Image Dimensions
