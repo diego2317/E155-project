@@ -3,15 +3,11 @@
 #define MAIN_H
 
 #include "stm32l4xx_hal.h"
-#include <stdio.h>
 
-#define PCLK_PIN GPIO_PIN_3
-#define DATA_VALID_PIN GPIO_PIN_4
-#define PIXEL_DATA_PIN GPIO_PIN_5
-#define FRAME_ACTIVE_PIN GPIO_PIN_11
+// Expose handles defined in main.c so other modules can use them
+extern I2C_HandleTypeDef hi2c1;
+extern UART_HandleTypeDef huart2;
 
-// System-level functions
-void SystemClock_Config(void);
 void Error_Handler(void);
 
 #endif // MAIN_H

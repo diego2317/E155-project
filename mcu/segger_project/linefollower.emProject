@@ -60,12 +60,22 @@
     </folder>
     <folder Name="Source Files">
       <configuration Name="Common" filter="c;cpp;cxx;cc;h;s;asm;inc" />
-      <file file_name="gpio.c" />
-      <file file_name="i2c.c" />
+      <file file_name="camera_capture.c" />
+      <file file_name="camera_vision.c" />
+      <file file_name="gpio.c">
+        <configuration Name="Debug" build_exclude_from_build="Yes" />
+      </file>
+      <file file_name="i2c.c">
+        <configuration Name="Debug" build_exclude_from_build="Yes" />
+      </file>
       <file file_name="main.c" />
       <file file_name="ov7670.c" />
-      <file file_name="spi.c" />
-      <file file_name="spi_control_handshake.c" />
+      <file file_name="spi.c">
+        <configuration Name="Debug" build_exclude_from_build="Yes" />
+      </file>
+      <file file_name="spi_control_handshake.c">
+        <configuration Name="Debug" build_exclude_from_build="Yes" />
+      </file>
       <file file_name="stm32l4xx_hal.c" />
       <file file_name="stm32l4xx_hal_adc.c" />
       <file file_name="stm32l4xx_hal_adc_ex.c" />
@@ -171,8 +181,12 @@
       <file file_name="stm32l4xx_ll_usart.c" />
       <file file_name="stm32l4xx_ll_usb.c" />
       <file file_name="stm32l4xx_ll_utils.c" />
-      <file file_name="uart.c" />
-      <file file_name="xclk.c" />
+      <file file_name="uart.c">
+        <configuration Name="Debug" build_exclude_from_build="Yes" />
+      </file>
+      <file file_name="xclk.c">
+        <configuration Name="Debug" build_exclude_from_build="Yes" />
+      </file>
     </folder>
     <folder Name="System Files">
       <file file_name="SEGGER_THUMB_Startup.s" />

@@ -13,7 +13,7 @@ static const camera_reg ov7670_qvga_yuv[] = {
     {0x11, 0x00, 20, "CLKRC: /1"}, // i changed it to divide by 1 from Ox01, to ox00
     {0x12, 0x10, 100, "COM7: QVGA+YUV"},  // Set QVGA
     {0x0C, 0x04, 20, "COM3: Scaling"},
-    {0x3E, 0x00, 20, "COM14: PCLK scaling"}, // i changed this to ox00 from ox19
+    {0x3E, 0x38, 20, "COM14: PCLK scaling"}, // i changed this to ox00 from ox19
     {0x32, 0x80, 10, "HREF"},
     {0x17, 0x16, 10, "HSTART"},
     {0x18, 0x04, 10, "HSTOP"},
@@ -175,272 +175,272 @@ int OV7670_Init_QVGA(void) {
     }
 }
 
-// Show current config
-void Camera_ShowCurrentConfig(void) {
-    printf("=== Current Configuration ===\n");
+// // Show current config
+// void Camera_ShowCurrentConfig(void) {
+//     printf("=== Current Configuration ===\n");
     
-    uint8_t val;
-    const uint8_t regs[] = {0x11, 0x12, 0x13, 0x0C, 0x3E, 0x15, 0x40};
-    const char* names[] = {"CLKRC", "COM7", "COM8", "COM3", "COM14", "COM10", "COM15"};
+//     uint8_t val;
+//     const uint8_t regs[] = {0x11, 0x12, 0x13, 0x0C, 0x3E, 0x15, 0x40};
+//     const char* names[] = {"CLKRC", "COM7", "COM8", "COM3", "COM14", "COM10", "COM15"};
     
-    for (int i = 0; i < 7; i++) {
-        if (OV7670_ReadReg(regs[i], &val) == HAL_OK) {
-            printf("  %-8s (0x%02X) = 0x%02X\n", names[i], regs[i], val);
-        }
-    }
-    printf("\n");
-}
+//     for (int i = 0; i < 7; i++) {
+//         if (OV7670_ReadReg(regs[i], &val) == HAL_OK) {
+//             printf("  %-8s (0x%02X) = 0x%02X\n", names[i], regs[i], val);
+//         }
+//     }
+//     printf("\n");
+// }
 
-// Configure pins
-void Camera_ControlPins_Init(void) {
-    GPIO_InitTypeDef gpio = {0};
-    __HAL_RCC_GPIOA_CLK_ENABLE();
+// // Configure pins
+// void Camera_ControlPins_Init(void) {
+//     GPIO_InitTypeDef gpio = {0};
+//     __HAL_RCC_GPIOA_CLK_ENABLE();
     
-    gpio.Pin = CAM_VSYNC_PIN | CAM_HREF_PIN | CAM_PCLK_PIN;
-    gpio.Mode = GPIO_MODE_INPUT;
-    gpio.Pull = GPIO_NOPULL;
-    gpio.Speed = GPIO_SPEED_FREQ_VERY_HIGH;
-    HAL_GPIO_Init(GPIOA, &gpio);
-}
+//     gpio.Pin = CAM_VSYNC_PIN | CAM_HREF_PIN | CAM_PCLK_PIN;
+//     gpio.Mode = GPIO_MODE_INPUT;
+//     gpio.Pull = GPIO_NOPULL;
+//     gpio.Speed = GPIO_SPEED_FREQ_VERY_HIGH;
+//     HAL_GPIO_Init(GPIOA, &gpio);
+// }
 
-// Test signals
-void Camera_SignalTest(void) {
-    printf("----------------------\n");
-    printf("  Video Signal Test\n");
-    printf("----------------------\n\n");
+// // Test signals
+// void Camera_SignalTest(void) {
+//     printf("----------------------\n");
+//     printf("  Video Signal Test\n");
+//     printf("----------------------\n\n");
     
-    Camera_ControlPins_Init();
+//     Camera_ControlPins_Init();
     
-    printf("Sampling for 300ms...\n");
+//     printf("Sampling for 300ms...\n");
     
-    int vsync_count = 0, href_count = 0, pclk_count = 0;
-    int prev_vsync = 0, prev_href = 0, prev_pclk = 0;
+//     int vsync_count = 0, href_count = 0, pclk_count = 0;
+//     int prev_vsync = 0, prev_href = 0, prev_pclk = 0;
     
-    uint32_t start = HAL_GetTick();
-    int samples = 0;
+//     uint32_t start = HAL_GetTick();
+//     int samples = 0;
     
-    while (HAL_GetTick() - start < 300) {
-        int vsync = HAL_GPIO_ReadPin(CAM_VSYNC_PORT, CAM_VSYNC_PIN);
-        int href = HAL_GPIO_ReadPin(CAM_HREF_PORT, CAM_HREF_PIN);
-        int pclk = HAL_GPIO_ReadPin(CAM_PCLK_PORT, CAM_PCLK_PIN);
+//     while (HAL_GetTick() - start < 300) {
+//         int vsync = HAL_GPIO_ReadPin(CAM_VSYNC_PORT, CAM_VSYNC_PIN);
+//         int href = HAL_GPIO_ReadPin(CAM_HREF_PORT, CAM_HREF_PIN);
+//         int pclk = HAL_GPIO_ReadPin(CAM_PCLK_PORT, CAM_PCLK_PIN);
         
-        if (vsync != prev_vsync) vsync_count++;
-        if (href != prev_href) href_count++;
-        if (pclk != prev_pclk) pclk_count++;
+//         if (vsync != prev_vsync) vsync_count++;
+//         if (href != prev_href) href_count++;
+//         if (pclk != prev_pclk) pclk_count++;
         
-        prev_vsync = vsync;
-        prev_href = href;
-        prev_pclk = pclk;
-        samples++;
-    }
+//         prev_vsync = vsync;
+//         prev_href = href;
+//         prev_pclk = pclk;
+//         samples++;
+//     }
     
-    printf("\nResults (%d samples):\n", samples);
-    printf("----------------------\n");
+//     printf("\nResults (%d samples):\n", samples);
+//     printf("----------------------\n");
     
-    printf("PCLK:  %7d transitions ", pclk_count);
-    if (pclk_count > 5000) {
-        printf("!!!!!! ACTIVE!\n");
-    } else if (pclk_count > 500) {
-        printf("⚠ SLOW\n");
-    } else {
-        printf("X NONE\n");
-    }
+//     printf("PCLK:  %7d transitions ", pclk_count);
+//     if (pclk_count > 5000) {
+//         printf("!!!!!! ACTIVE!\n");
+//     } else if (pclk_count > 500) {
+//         printf("⚠ SLOW\n");
+//     } else {
+//         printf("X NONE\n");
+//     }
     
-    printf("HREF:  %7d transitions ", href_count);
-    if (href_count > 200) {
-        printf("!!!!!! ACTIVE!\n");
-    } else if (href_count > 20) {
-        printf("SLOW\n");
-    } else {
-        printf("X NONE\n");
-    }
+//     printf("HREF:  %7d transitions ", href_count);
+//     if (href_count > 200) {
+//         printf("!!!!!! ACTIVE!\n");
+//     } else if (href_count > 20) {
+//         printf("SLOW\n");
+//     } else {
+//         printf("X NONE\n");
+//     }
     
-    printf("VSYNC: %7d transitions ", vsync_count);
-    if (vsync_count >= 6) {
-        printf("!!!!!! ACTIVE!\n");
-    } else if (vsync_count > 0) {
-        printf("SLOW\n");
-    } else {
-        printf("X NONE\n");
-    }
+//     printf("VSYNC: %7d transitions ", vsync_count);
+//     if (vsync_count >= 6) {
+//         printf("!!!!!! ACTIVE!\n");
+//     } else if (vsync_count > 0) {
+//         printf("SLOW\n");
+//     } else {
+//         printf("X NONE\n");
+//     }
     
-    printf("----------------------\n");
+//     printf("----------------------\n");
     
-    if (pclk_count > 5000 && href_count > 200) {
-        printf("\n!!!!!! VIDEO OUTPUT DETECTED! !!!!!!\n");
-        printf("Camera is working - ready for FPGA!\n\n");
-    } else if (pclk_count == 0 && href_count == 0) {
-        printf("\nX NO VIDEO OUTPUT\n\n");
-        printf("Hardware checklist:\n");
-        printf("  [ ] PWDN pin grounded or floating?\n");
-        printf("  [ ] XCLK actually reaching camera sensor?\n");
-        printf("  [ ] Power stable (measure with meter)?\n");
-        printf("  [ ] All GND connections solid?\n\n");
-    } else {
-        printf("\n⚠ PARTIAL OUTPUT\n");
-        printf("Camera responding but output is weak\n\n");
-    }
+//     if (pclk_count > 5000 && href_count > 200) {
+//         printf("\n!!!!!! VIDEO OUTPUT DETECTED! !!!!!!\n");
+//         printf("Camera is working - ready for FPGA!\n\n");
+//     } else if (pclk_count == 0 && href_count == 0) {
+//         printf("\nX NO VIDEO OUTPUT\n\n");
+//         printf("Hardware checklist:\n");
+//         printf("  [ ] PWDN pin grounded or floating?\n");
+//         printf("  [ ] XCLK actually reaching camera sensor?\n");
+//         printf("  [ ] Power stable (measure with meter)?\n");
+//         printf("  [ ] All GND connections solid?\n\n");
+//     } else {
+//         printf("\n⚠ PARTIAL OUTPUT\n");
+//         printf("Camera responding but output is weak\n\n");
+//     }
     
-    printf("----------------------\n\n");
-}
+//     printf("----------------------\n\n");
+// }
 
-// Measure frame rate based on full frames received over SPI (DMA)
-void Camera_MeasureFrameRate(void)
-{
-    printf("Measuring frame rate from SPI stream (3 seconds).\n");
+// // Measure frame rate based on full frames received over SPI (DMA)
+// void Camera_MeasureFrameRate(void)
+// {
+//     printf("Measuring frame rate from SPI stream (3 seconds).\n");
 
-    const uint32_t window_ms = 3000U;
-    uint32_t start_ms = HAL_GetTick();
-    int frames = 0;
+//     const uint32_t window_ms = 3000U;
+//     uint32_t start_ms = HAL_GetTick();
+//     int frames = 0;
 
-    while ((HAL_GetTick() - start_ms) < window_ms) {
-        /* Start DMA RX for one full 1-bit QVGA frame (9600 bytes) */
-        if (SPI1_Receive_DMA(frame_buffer, SPI_RX_BUFFER_BYTES) != HAL_OK) {
-            printf("X SPI DMA start failed\n");
-            break;
-        }
+//     while ((HAL_GetTick() - start_ms) < window_ms) {
+//         /* Start DMA RX for one full 1-bit QVGA frame (9600 bytes) */
+//         if (SPI1_Receive_DMA(frame_buffer, SPI_RX_BUFFER_BYTES) != HAL_OK) {
+//             printf("X SPI DMA start failed\n");
+//             break;
+//         }
 
-        bool timeout = false;
+//         bool timeout = false;
 
-        /* Wait for this frame's DMA transfer to complete or time window to expire */
-        while (!spi_rx_full_complete && !spi_rx_error) {
-            if ((HAL_GetTick() - start_ms) >= window_ms) {
-                timeout = true;
-                SPI1_Stop_DMA();
-                break;
-            }
-        }
+//         /* Wait for this frame's DMA transfer to complete or time window to expire */
+//         while (!spi_rx_full_complete && !spi_rx_error) {
+//             if ((HAL_GetTick() - start_ms) >= window_ms) {
+//                 timeout = true;
+//                 SPI1_Stop_DMA();
+//                 break;
+//             }
+//         }
 
-        if (timeout) {
-            /* Measurement window ended mid-frame; do not count this one */
-            break;
-        }
+//         if (timeout) {
+//             /* Measurement window ended mid-frame; do not count this one */
+//             break;
+//         }
 
-        if (spi_rx_error) {
-            printf("X SPI RX error during frame-rate measurement\n");
-            break;
-        }
+//         if (spi_rx_error) {
+//             printf("X SPI RX error during frame-rate measurement\n");
+//             break;
+//         }
 
-        /* A full SPI frame has been received */
-        frames++;
-    }
+//         /* A full SPI frame has been received */
+//         frames++;
+//     }
 
-    uint32_t elapsed_ms = HAL_GetTick() - start_ms;
-    if (elapsed_ms == 0U) {
-        elapsed_ms = 1U;  // avoid divide-by-zero
-    }
+//     uint32_t elapsed_ms = HAL_GetTick() - start_ms;
+//     if (elapsed_ms == 0U) {
+//         elapsed_ms = 1U;  // avoid divide-by-zero
+//     }
 
-    float fps = (frames * 1000.0f) / (float)elapsed_ms;
+//     float fps = (frames * 1000.0f) / (float)elapsed_ms;
 
-    printf("Result: %d frames in %lu ms = %.1f fps\n",
-           frames, (unsigned long)elapsed_ms, fps);
+//     printf("Result: %d frames in %lu ms = %.1f fps\n",
+//            frames, (unsigned long)elapsed_ms, fps);
 
-    if (frames == 0) {
-        printf("X No frames received over SPI\n\n");
-    } else if (fps >= 45.0f && fps <= 90.0f) {
-        printf("!! Frame rate is good!\n\n");
-    } else {
-        printf("⚠ Unusual frame rate\n\n");
-    }
-}
+//     if (frames == 0) {
+//         printf("X No frames received over SPI\n\n");
+//     } else if (fps >= 45.0f && fps <= 90.0f) {
+//         printf("!! Frame rate is good!\n\n");
+//     } else {
+//         printf("⚠ Unusual frame rate\n\n");
+//     }
+// }
 
 
-// Measure frame rate
-void Camera_MeasureFrameRate_VSYNC(void) {
-    printf("Measuring frame rate (3 seconds)...\n");
+// // Measure frame rate
+// void Camera_MeasureFrameRate_VSYNC(void) {
+//     printf("Measuring frame rate (3 seconds)...\n");
     
-    int frames = 0;
-    int prev = HAL_GPIO_ReadPin(CAM_VSYNC_PORT, CAM_VSYNC_PIN);
-    uint32_t start = HAL_GetTick();
+//     int frames = 0;
+//     int prev = HAL_GPIO_ReadPin(CAM_VSYNC_PORT, CAM_VSYNC_PIN);
+//     uint32_t start = HAL_GetTick();
     
-    while (HAL_GetTick() - start < 3000) {
-        int curr = HAL_GPIO_ReadPin(CAM_VSYNC_PORT, CAM_VSYNC_PIN);
-        if (curr && !prev) frames++;
-        prev = curr;
-    }
+//     while (HAL_GetTick() - start < 3000) {
+//         int curr = HAL_GPIO_ReadPin(CAM_VSYNC_PORT, CAM_VSYNC_PIN);
+//         if (curr && !prev) frames++;
+//         prev = curr;
+//     }
     
-    printf("Result: %d frames in 3s = %.1f fps\n", frames, frames/3.0f);
+//     printf("Result: %d frames in 3s = %.1f fps\n", frames, frames/3.0f);
     
-    if (frames >= 45 && frames <= 90) {
-        printf("!! Frame rate is good!\n\n");
-    } else if (frames > 0) {
-        printf("⚠ Unusual frame rate\n\n");
-    } else {
-        printf("X No frames\n\n");
-    }
-}
+//     if (frames >= 45 && frames <= 90) {
+//         printf("!! Frame rate is good!\n\n");
+//     } else if (frames > 0) {
+//         printf("⚠ Unusual frame rate\n\n");
+//     } else {
+//         printf("X No frames\n\n");
+//     }
+// }
 
-// Verify YUV output format
-void Camera_VerifyFormat(void) {
-    printf("----------------------\n");
-    printf("  Format Verification\n");
-    printf("----------------------\n\n");
+// // Verify YUV output format
+// void Camera_VerifyFormat(void) {
+//     printf("----------------------\n");
+//     printf("  Format Verification\n");
+//     printf("----------------------\n\n");
     
-    uint8_t com7, com15, com13, tslb;
+//     uint8_t com7, com15, com13, tslb;
     
-    OV7670_ReadReg(0x12, &com7);
-    OV7670_ReadReg(0x40, &com15);
-    OV7670_ReadReg(0x3D, &com13);
-    OV7670_ReadReg(0x3A, &tslb);
+//     OV7670_ReadReg(0x12, &com7);
+//     OV7670_ReadReg(0x40, &com15);
+//     OV7670_ReadReg(0x3D, &com13);
+//     OV7670_ReadReg(0x3A, &tslb);
     
-    printf("Format Control Registers:\n");
-    printf("----------------------\n");
-    printf("COM7  (0x12) = 0x%02X\n", com7);
-    printf("  Bit 2 (RGB) = %d  → %s\n", 
-           (com7 >> 2) & 1,
-           ((com7 >> 2) & 1) ? "RGB" : "YUV");
-    printf("  Bit 4 (QVGA)= %d  → %s\n",
-           (com7 >> 4) & 1,
-           ((com7 >> 4) & 1) ? "QVGA (320x240)" : "VGA (640x480)");
+//     printf("Format Control Registers:\n");
+//     printf("----------------------\n");
+//     printf("COM7  (0x12) = 0x%02X\n", com7);
+//     printf("  Bit 2 (RGB) = %d  → %s\n", 
+//            (com7 >> 2) & 1,
+//            ((com7 >> 2) & 1) ? "RGB" : "YUV");
+//     printf("  Bit 4 (QVGA)= %d  → %s\n",
+//            (com7 >> 4) & 1,
+//            ((com7 >> 4) & 1) ? "QVGA (320x240)" : "VGA (640x480)");
     
-    printf("\nCOM15 (0x40) = 0x%02X\n", com15);
-    printf("  Bits 7-6 = %d  → ", (com15 >> 6) & 3);
-    switch ((com15 >> 6) & 3) {
-        case 0: printf("Output range varies\n"); break;
-        case 1: printf("Reserved\n"); break;
-        case 2: printf("Output range [16-235]\n"); break;
-        case 3: printf("Output range [0-255] (Full)\n"); break;
-    }
-    printf("  Bit 4 (RGB565) = %d\n", (com15 >> 4) & 1);
+//     printf("\nCOM15 (0x40) = 0x%02X\n", com15);
+//     printf("  Bits 7-6 = %d  → ", (com15 >> 6) & 3);
+//     switch ((com15 >> 6) & 3) {
+//         case 0: printf("Output range varies\n"); break;
+//         case 1: printf("Reserved\n"); break;
+//         case 2: printf("Output range [16-235]\n"); break;
+//         case 3: printf("Output range [0-255] (Full)\n"); break;
+//     }
+//     printf("  Bit 4 (RGB565) = %d\n", (com15 >> 4) & 1);
     
-    printf("\nTSLB  (0x3A) = 0x%02X\n", tslb);
-    printf("  Bit 3 (UV order) = %d  → %s\n",
-           (tslb >> 3) & 1,
-           ((tslb >> 3) & 1) ? "UYVY":  "YUYV");
+//     printf("\nTSLB  (0x3A) = 0x%02X\n", tslb);
+//     printf("  Bit 3 (UV order) = %d  → %s\n",
+//            (tslb >> 3) & 1,
+//            ((tslb >> 3) & 1) ? "UYVY":  "YUYV");
     
-    printf("----------------------\n\n");
+//     printf("----------------------\n\n");
     
-    // Determine format
-    int is_rgb = (com7 >> 2) & 1;
-    int is_rgb565 = (com15 >> 4) & 1;
-    int yuv_order = (tslb >> 3) & 1;
+//     // Determine format
+//     int is_rgb = (com7 >> 2) & 1;
+//     int is_rgb565 = (com15 >> 4) & 1;
+//     int yuv_order = (tslb >> 3) & 1;
     
-    printf("DETECTED FORMAT:\n");
-    if (is_rgb) {
-        if (is_rgb565) {
-            printf("  → RGB565 (16-bit)\n");
-        } else {
-            printf("  → RGB444 or RGB555\n");
-        }
-    } else {
-        printf("  → YUV422 (%s byte order)\n", 
-               yuv_order ? "YUYV" : "UYVY");
-        printf("\n");
-        printf("YUV422 Format Details:\n");
-        if (!yuv_order) {
-            printf("  Pixel order: Y0 U0 Y1 V0 (YUYV)\n");
-            printf("  For 2 pixels: [Y0][U][Y1][V]\n");
-        } else {
-            printf("  Pixel order: U0 Y0 V0 Y1 (UYVY)\n");
-            printf("  For 2 pixels: [U][Y0][V][Y1]\n");
-        }
-        printf("\n");
-        printf("Expected data stream:\n");
-        printf("  - 2 bytes per pixel (4:2:2 subsampling)\n");
-        printf("  - 320x240 = 76,800 pixels\n");
-        printf("  - 153,600 bytes per frame\n");
-    }
+//     printf("DETECTED FORMAT:\n");
+//     if (is_rgb) {
+//         if (is_rgb565) {
+//             printf("  → RGB565 (16-bit)\n");
+//         } else {
+//             printf("  → RGB444 or RGB555\n");
+//         }
+//     } else {
+//         printf("  → YUV422 (%s byte order)\n", 
+//                yuv_order ? "YUYV" : "UYVY");
+//         printf("\n");
+//         printf("YUV422 Format Details:\n");
+//         if (!yuv_order) {
+//             printf("  Pixel order: Y0 U0 Y1 V0 (YUYV)\n");
+//             printf("  For 2 pixels: [Y0][U][Y1][V]\n");
+//         } else {
+//             printf("  Pixel order: U0 Y0 V0 Y1 (UYVY)\n");
+//             printf("  For 2 pixels: [U][Y0][V][Y1]\n");
+//         }
+//         printf("\n");
+//         printf("Expected data stream:\n");
+//         printf("  - 2 bytes per pixel (4:2:2 subsampling)\n");
+//         printf("  - 320x240 = 76,800 pixels\n");
+//         printf("  - 153,600 bytes per frame\n");
+//     }
     
-    printf("\n----------------------\n\n");
-}
+//     printf("\n----------------------\n\n");
+// }
 
