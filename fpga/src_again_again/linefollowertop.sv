@@ -19,11 +19,11 @@ module camera_line_follower_top (
     input  wire cam_href,           // Line valid (HIGH during valid pixel data)
     input  wire [7:0] cam_data,     // Pixel data D[7:0]
    
-    // SPI Interface (to MCU)
-    input  wire spi_sck,            // SPI clock from MCU
-    input  wire spi_mosi,           // Data from MCU (unused for now)
-    output wire spi_miso,           // Data to MCU
-    input  wire spi_ncs,            // Chip select (active low)
+    // MCU Interface
+    output wire pclk_mcu,
+	output wire in_frame_mcu,
+	output wire write_enable_mcu,
+	output wire data_mcu,            // Chip select (active low)
    
     // Status outputs
     output wire pclk,
@@ -43,7 +43,7 @@ module camera_line_follower_top (
     wire cam_frame_done;
    
     // Fixed threshold value (can be changed here or made a parameter)
-    localparam [7:0] THRESHOLD = 8'd128;  // Mid-point threshold
+    localparam [7:0] THRESHOLD = 8'd120;  // Mid-point threshold
     // Adjust this value based on lighting conditions:
     // Lower value (e.g., 64)  = detect darker lines
     // Higher value (e.g., 192) = detect brighter lines
@@ -79,6 +79,10 @@ module camera_line_follower_top (
 	assign pclk = cam_pclk;
 	assign write_enable = cam_wr_en;
 	assign data = cam_wr_data;
+	assign pclk_mcu = cam_pclk;
+	assign write_enable_mcu = cam_wr_en;
+	assign data_mcu = cam_wr_data;
+	assign in_frame_mcu = in_frame;
     // Ping-pong SPRAM buffer with CDC (handles slow cam_pclk to fast sys_clk)
     //spram_pingpong_1bit frame_buffer (
         //.sys_clk(clk_48mhz),
@@ -109,10 +113,10 @@ module camera_line_follower_top (
     //);
    
     // Debug LEDs
-    assign led_red = cam_frame_done;      // Blink on frame complete
-    assign led_green = buffer_ready;      // On when frame ready
-    assign led_blue = !spi_ncs;           // On during SPI transfer
-	assign spi_miso = cam_wr_data;
+    //assign led_red = cam_frame_done;      // Blink on frame complete
+    //assign led_green = buffer_ready;      // On when frame ready
+    //assign led_blue = !spi_ncs;           // On during SPI transfer
+	//assign spi_miso = cam_wr_data;
 endmodule
 
 

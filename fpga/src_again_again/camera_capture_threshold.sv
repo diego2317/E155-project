@@ -41,7 +41,7 @@ module camera_capture_threshold (
    
     // Edge detection on synchronized signals
     // VSYNC: HIGH when idle, LOW during frame transmission
-    // Frame starts on FALLING edge (HIGHâ†’LOW)
+    // Frame starts on FALLING edge (HIGHÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢LOW)
     wire vsync_falling = !cam_vsync && vsync_d1;
     wire vsync_rising = cam_vsync && !vsync_d1;
     wire href_valid = href_d1;      // Use href_d1 to match data_d1 timing
@@ -70,7 +70,7 @@ module camera_capture_threshold (
             frame_done <= 1'b0;     // Default: pulse, not level
             wr_en <= 1'b0;          // Default: no write
            
-            // Start of new frame - VSYNC falling edge (HIGHâ†’LOW)
+            // Start of new frame - VSYNC falling edge (HIGHÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢LOW)
             if (vsync_falling) begin
                 pixel_count <= 9'd0;
                 line_count <= 8'd0;
@@ -79,7 +79,7 @@ module camera_capture_threshold (
                 in_frame <= 1'b1;
             end
            
-            // End of frame - VSYNC rising edge (LOWâ†’HIGH)
+            // End of frame - VSYNC rising edge (LOWÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢HIGH)
             else if (vsync_rising && in_frame) begin
                 in_frame <= 1'b0;
                 frame_done <= 1'b1;
@@ -88,7 +88,7 @@ module camera_capture_threshold (
             // Capture pixels during valid lines
             // Only process when BOTH current href and delayed href are valid
             // This prevents pipeline drain writes after HREF ends
-            else if (in_frame && href_valid && cam_href) begin
+            else if (in_frame && href_valid) begin
                 // YUV422 format: Y0 U Y1 V Y2 U Y3 V...
                 // Only capture Y (luminance) values (byte_select == 0)
                 if (byte_select == 1'b0) begin
