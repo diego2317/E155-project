@@ -66,10 +66,10 @@ int main(void)
             // Analyze and display results
             visualize_image_compact();
             //visualize_image_line_stats();
-           // HAL_GPIO_TogglePin(GPIOB, GPIO_PIN_3);
+            HAL_GPIO_WritePin(GPIOB, GPIO_PIN_3, 1);
         } else {
             //printf("Capture Error: Only received %d pixels.\r\n", pixel_count);
-           // HAL_GPIO_TogglePin(GPIOB, GPIO_PIN_3);
+            HAL_GPIO_WritePin(GPIOB, GPIO_PIN_3, 0);
         }
        
         //HAL_Delay(500);
