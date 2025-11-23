@@ -43,7 +43,7 @@ module camera_line_follower_top (
     wire cam_frame_done;
    
     // Fixed threshold value (can be changed here or made a parameter)
-    localparam [7:0] THRESHOLD = 8'd120;  // Mid-point threshold
+    localparam [7:0] THRESHOLD = 8'd250;  // Mid-point threshold
     // Adjust this value based on lighting conditions:
     // Lower value (e.g., 64)  = detect darker lines
     // Higher value (e.g., 192) = detect brighter lines

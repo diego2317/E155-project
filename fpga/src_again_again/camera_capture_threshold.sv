@@ -41,7 +41,7 @@ module camera_capture_threshold (
    
     // Edge detection on synchronized signals
     // VSYNC: HIGH when idle, LOW during frame transmission
-    // Frame starts on FALLING edge (HIGHÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢LOW)
+    // Frame starts on FALLING edge (HIGHÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â‚¬Å¾Ã‚Â¢LOW)
     wire vsync_falling = !cam_vsync && vsync_d1;
     wire vsync_rising = cam_vsync && !vsync_d1;
     wire href_valid = href_d1;      // Use href_d1 to match data_d1 timing
@@ -70,7 +70,7 @@ module camera_capture_threshold (
             frame_done <= 1'b0;     // Default: pulse, not level
             wr_en <= 1'b0;          // Default: no write
            
-            // Start of new frame - VSYNC falling edge (HIGHÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢LOW)
+            // Start of new frame - VSYNC falling edge (HIGHÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â‚¬Å¾Ã‚Â¢LOW)
             if (vsync_falling) begin
                 pixel_count <= 9'd0;
                 line_count <= 8'd0;
@@ -79,7 +79,7 @@ module camera_capture_threshold (
                 in_frame <= 1'b1;
             end
            
-            // End of frame - VSYNC rising edge (LOWÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢HIGH)
+            // End of frame - VSYNC rising edge (LOWÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â‚¬Å¾Ã‚Â¢HIGH)
             else if (vsync_rising && in_frame) begin
                 in_frame <= 1'b0;
                 frame_done <= 1'b1;
@@ -114,9 +114,10 @@ module camera_capture_threshold (
             end
            
             // End of line detection (HREF falling edge)
-            if (in_frame && href_falling) begin
+            if (in_frame && href_falling ) begin//&& cam_href
                 pixel_count <= 9'd0;
                 byte_select <= 1'b0;
+				//line_count <= line_count + 1'b1;
                 
                 // Check if we've completed all lines
                 if (line_count >= 8'd239) begin
