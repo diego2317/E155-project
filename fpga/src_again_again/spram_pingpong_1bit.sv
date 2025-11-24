@@ -123,6 +123,8 @@ module spram_pingpong_1bit (
         .PWROFF_N(1'b1),
         .DO(spram1_data_out)
     );
+	
+	
    
     // CDC: Synchronize packed_valid and packed_addr to sys_clk
     reg packed_valid_sync1, packed_valid_sync2, packed_valid_sync3;

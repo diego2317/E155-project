@@ -41,7 +41,7 @@ module camera_capture_threshold (
    
     // Edge detection on synchronized signals
     // VSYNC: HIGH when idle, LOW during frame transmission
-    // Frame starts on FALLING edge (HIGHÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â‚¬Å¾Ã‚Â¢LOW)
+    // Frame starts on FALLING edge
     wire vsync_falling = !cam_vsync && vsync_d1;
     wire vsync_rising = cam_vsync && !vsync_d1;
     wire href_valid = href_d1;      // Use href_d1 to match data_d1 timing
@@ -70,7 +70,7 @@ module camera_capture_threshold (
             frame_done <= 1'b0;     // Default: pulse, not level
             wr_en <= 1'b0;          // Default: no write
            
-            // Start of new frame - VSYNC falling edge (HIGHÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â‚¬Å¾Ã‚Â¢LOW)
+            // Start of new frame - VSYNC falling edge 
             if (vsync_falling) begin
                 pixel_count <= 9'd0;
                 line_count <= 8'd0;
@@ -79,7 +79,7 @@ module camera_capture_threshold (
                 in_frame <= 1'b1;
             end
            
-            // End of frame - VSYNC rising edge (LOWÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â‚¬Å¾Ã‚Â¢HIGH)
+            // End of frame - VSYNC rising edge 
             else if (vsync_rising && in_frame) begin
                 in_frame <= 1'b0;
                 frame_done <= 1'b1;
