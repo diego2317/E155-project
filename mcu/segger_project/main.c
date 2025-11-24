@@ -5,10 +5,12 @@
 #include "camera_capture.h"
 #include "camera_vision.h"
 #include <stdio.h>
+#include <stdbool.h>
 
 // Global Handles
 I2C_HandleTypeDef hi2c1;
 UART_HandleTypeDef huart2;
+SPI_HandleTypeDef hspi1;
 
 // Private Function Prototypes 
 void SystemClock_Config(void);
@@ -16,6 +18,10 @@ void I2C1_Init(void);
 void UART2_Init(void);
 void XCLK_Init(void);
 void GPIO_Capture_Init(void);
+void SPI1_Init(void);
+static void SPI1_GPIO_Init(void);
+
+volatile bool spi_rx_error = false;
 
 int main(void)
 {
@@ -26,6 +32,7 @@ int main(void)
     UART2_Init();
     I2C1_Init();
     GPIO_Capture_Init();
+    SPI1_Init();
    
     printf("\r\n=================================\r\n");
     printf("STM32 Camera Config & Capture\r\n");
@@ -58,7 +65,7 @@ int main(void)
         //printf("Waiting for next frame...\r\n");
         uint32_t start_time = HAL_GetTick();
        
-        capture_frame();
+        capture_frame_spi();
        
         uint32_t capture_time = HAL_GetTick() - start_time;
         if (pixel_count >= 76000) {
@@ -167,18 +174,59 @@ void GPIO_Capture_Init(void) {
     __HAL_RCC_GPIOA_CLK_ENABLE();
    
     // Configure all 4 pins as Inputs
-    GPIO_InitStruct.Pin = PCLK_PIN | DATA_VALID_PIN | FRAME_ACTIVE_PIN | PIXEL_DATA_PIN;
+    GPIO_InitStruct.Pin = FRAME_ACTIVE_PIN;
     GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
     GPIO_InitStruct.Pull = GPIO_PULLDOWN; // Keep lines low if FPGA is disconnected
     GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_VERY_HIGH;
     HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
-    GPIO_InitTypeDef GPIO_InitStruc = {0};
-    GPIO_InitStruc.Pin = GPIO_PIN_3;
-    GPIO_InitStruc.Pull = GPIO_NOPULL;
-    GPIO_InitStruc.Mode = GPIO_MODE_OUTPUT_PP;
-    GPIO_InitStruc.Speed = GPIO_SPEED_FREQ_HIGH;
-    HAL_GPIO_Init(GPIOB, &GPIO_InitStruc);
+    //GPIO_InitTypeDef GPIO_InitStruc = {0};
+    //GPIO_InitStruc.Pin = GPIO_PIN_3;
+    //GPIO_InitStruc.Pull = GPIO_NOPULL;
+    //GPIO_InitStruc.Mode = GPIO_MODE_OUTPUT_PP;
+    //GPIO_InitStruc.Speed = GPIO_SPEED_FREQ_HIGH;
+    //HAL_GPIO_Init(GPIOB, &GPIO_InitStruc);
 
+}
+
+void SPI1_Init(void)
+{
+    __HAL_RCC_SPI1_CLK_ENABLE();
+    SPI1_GPIO_Init();
+    //SPI1_DMA_Init();
+
+    hspi1.Instance = SPI1;
+    hspi1.Init.Mode = SPI_MODE_MASTER;
+    hspi1.Init.Direction = SPI_DIRECTION_2LINES_RXONLY;
+    hspi1.Init.DataSize = SPI_DATASIZE_8BIT;
+    hspi1.Init.CLKPolarity = SPI_POLARITY_LOW;     // SPI mode 0
+    hspi1.Init.CLKPhase    = SPI_PHASE_1EDGE;
+    hspi1.Init.NSS         = SPI_NSS_SOFT;         // manage CS in GPIO
+    hspi1.Init.BaudRatePrescaler = SPI_BAUDRATEPRESCALER_8;
+    hspi1.Init.FirstBit    = SPI_FIRSTBIT_MSB;
+    hspi1.Init.TIMode      = SPI_TIMODE_DISABLE;
+    hspi1.Init.CRCCalculation = SPI_CRCCALCULATION_DISABLE;
+    hspi1.Init.CRCPolynomial  = 7;
+    hspi1.Init.NSSPMode    = SPI_NSS_PULSE_DISABLE;
+
+    if (HAL_SPI_Init(&hspi1) != HAL_OK) {
+        spi_rx_error = true;
+    }
+}
+
+static void SPI1_GPIO_Init(void)
+{
+    GPIO_InitTypeDef GPIO_InitStruct = {0};
+
+    __HAL_RCC_GPIOA_CLK_ENABLE();
+
+    /* SPI1 SCK: PB3, MISO: PB4
+       (MOSI PA7 is unused in master RX-only mode) */
+    GPIO_InitStruct.Pin = GPIO_PIN_3 | GPIO_PIN_4;
+    GPIO_InitStruct.Mode = GPIO_MODE_AF_PP;
+    GPIO_InitStruct.Pull = GPIO_NOPULL;
+    GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_VERY_HIGH;
+    GPIO_InitStruct.Alternate = GPIO_AF5_SPI1;
+    HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
 }
 
 void SystemClock_Config(void) {

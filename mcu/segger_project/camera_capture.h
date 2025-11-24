@@ -11,5 +11,6 @@ extern uint8_t image_buffer[IMAGE_SIZE_BYTES];
 extern volatile uint32_t pixel_count;
 
 void capture_frame(void);
+void capture_frame_spi(void);
 
 #endif

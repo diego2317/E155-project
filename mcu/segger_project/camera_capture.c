@@ -41,7 +41,7 @@ void capture_frame(void)
     {
         gpio_state = *IDR_Reg;
         
-        // Detect PCLK Rising Edge (Current High && Previous Low)
+        // Detect PCLK Falling Edge (Current High && Previous Low)
         // We use bitwise logic strictly on registers here
         if (!(gpio_state & PCLK_PIN) && (prev_gpio & PCLK_PIN))
         {
@@ -73,5 +73,48 @@ void capture_frame(void)
             }
         }
         prev_gpio = gpio_state;
+    }
+}
+
+
+void capture_frame_spi(void)
+{
+    uint8_t *p_buffer = image_buffer;
+    const uint8_t *p_end = image_buffer + IMAGE_SIZE_BYTES;
+    
+    // 1. Pointers for speed
+    // Cast DR to uint8_t* is CRITICAL on L4 to force 8-bit access
+    volatile uint8_t *SPI_DR_8b = (__IO uint8_t *)&SPI1->DR;
+    volatile uint32_t *SPI_SR   = &SPI1->SR;
+    
+    // ADJUST THIS IF FRAME PIN IS NOT ON PORT A
+    volatile uint32_t *GPIO_Frame_IDR = &(GPIOA->IDR); 
+
+    // 2. Wait for FPGA to signal Ready (High)
+    while (!(*GPIO_Frame_IDR & FRAME_ACTIVE_PIN));
+    pixel_count = 0;
+
+    // 3. Enable SPI (Starts Clock Generation immediately in RXONLY mode)
+    // Note: We don't need to re-configure CR2/FRXTH because HAL_SPI_Init already did it.
+    SPI1->CR1 |= SPI_CR1_SPE; 
+
+    // 4. Capture Loop
+    while (*GPIO_Frame_IDR & FRAME_ACTIVE_PIN)
+    {
+        // Wait for FIFO to have at least 8 bits (RXNE)
+        if (*SPI_SR & SPI_SR_RXNE)
+        {
+            *p_buffer++ = *SPI_DR_8b;
+            if (p_buffer >= p_end) break;
+            pixel_count += 8;
+        }
+    }
+
+    // 5. Stop Clock
+    SPI1->CR1 &= ~SPI_CR1_SPE; 
+    
+    // Flush any extra bytes sitting in FIFO so they don't corrupt next frame
+    while (*SPI_SR & SPI_SR_RXNE) {
+        (void)*SPI_DR_8b;
     }
 }

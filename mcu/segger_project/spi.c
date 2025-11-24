@@ -9,14 +9,14 @@ volatile bool spi_rx_full_complete = false;
 volatile bool spi_rx_error = false;
 
 static void SPI1_GPIO_Init(void);
-static void SPI1_DMA_Init(void);
+//static void SPI1_DMA_Init(void);
 static void SPI1_ResetRxFlags(void);
 
 void SPI1_Init(void)
 {
     __HAL_RCC_SPI1_CLK_ENABLE();
     SPI1_GPIO_Init();
-    SPI1_DMA_Init();
+    //SPI1_DMA_Init();
 
     hspi1.Instance = SPI1;
     hspi1.Init.Mode = SPI_MODE_MASTER;
@@ -73,35 +73,35 @@ static void SPI1_GPIO_Init(void)
     HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
 }
 
-static void SPI1_DMA_Init(void)
-{
-    __HAL_RCC_DMA2_CLK_ENABLE();
-#ifdef __HAL_RCC_DMAMUX1_CLK_ENABLE
-    __HAL_RCC_DMAMUX1_CLK_ENABLE();
-#endif
+//static void SPI1_DMA_Init(void)
+//{
+//    __HAL_RCC_DMA2_CLK_ENABLE();
+//#ifdef __HAL_RCC_DMAMUX1_CLK_ENABLE
+//    __HAL_RCC_DMAMUX1_CLK_ENABLE();
+//#endif
 
-    /* Configure DMA to push the incoming pixels directly into RAM */
-    hdma_spi1_rx.Instance = DMA2_Channel3;
-    hdma_spi1_rx.Init.Request = 0U;
-    hdma_spi1_rx.Init.Direction = DMA_PERIPH_TO_MEMORY;
-    hdma_spi1_rx.Init.PeriphInc = DMA_PINC_DISABLE;
-    hdma_spi1_rx.Init.MemInc = DMA_MINC_ENABLE;
-    hdma_spi1_rx.Init.PeriphDataAlignment = DMA_PDATAALIGN_BYTE;
-    hdma_spi1_rx.Init.MemDataAlignment = DMA_MDATAALIGN_BYTE;
-    hdma_spi1_rx.Init.Mode = DMA_NORMAL;
-    hdma_spi1_rx.Init.Priority = DMA_PRIORITY_HIGH;
+//    /* Configure DMA to push the incoming pixels directly into RAM */
+//    hdma_spi1_rx.Instance = DMA2_Channel3;
+//    hdma_spi1_rx.Init.Request = 0U;
+//    hdma_spi1_rx.Init.Direction = DMA_PERIPH_TO_MEMORY;
+//    hdma_spi1_rx.Init.PeriphInc = DMA_PINC_DISABLE;
+//    hdma_spi1_rx.Init.MemInc = DMA_MINC_ENABLE;
+//    hdma_spi1_rx.Init.PeriphDataAlignment = DMA_PDATAALIGN_BYTE;
+//    hdma_spi1_rx.Init.MemDataAlignment = DMA_MDATAALIGN_BYTE;
+//    hdma_spi1_rx.Init.Mode = DMA_NORMAL;
+//    hdma_spi1_rx.Init.Priority = DMA_PRIORITY_HIGH;
 
-    if (HAL_DMA_Init(&hdma_spi1_rx) != HAL_OK) {
-        spi_rx_error = true;
-    }
+//    if (HAL_DMA_Init(&hdma_spi1_rx) != HAL_OK) {
+//        spi_rx_error = true;
+//    }
 
-    /* Link DMA to SPI RX */
-    __HAL_LINKDMA(&hspi1, hdmarx, hdma_spi1_rx);
+//    /* Link DMA to SPI RX */
+//    __HAL_LINKDMA(&hspi1, hdmarx, hdma_spi1_rx);
 
-    /* NVIC config for DMA RX interrupt */
-    HAL_NVIC_SetPriority(DMA2_Channel3_IRQn, 0, 0);
-    HAL_NVIC_EnableIRQ(DMA2_Channel3_IRQn);
-}
+//    /* NVIC config for DMA RX interrupt */
+//    HAL_NVIC_SetPriority(DMA2_Channel3_IRQn, 0, 0);
+//    HAL_NVIC_EnableIRQ(DMA2_Channel3_IRQn);
+//}
 
 /* --- IRQ handlers / callbacks ------------------------------------------- */
 
