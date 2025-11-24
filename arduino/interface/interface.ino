@@ -49,7 +49,7 @@
 #define Y3_GPIO_NUM      7   // Pin D4
 #define Y2_GPIO_NUM      6   // Pin D3
 
-#define VSYNC_GPIO_NUM   48  // Pin D13
+#define VSYNC_GPIO_NUM   4  // Pin D13
 #define HREF_GPIO_NUM    1   // Pin A0
 #define PCLK_GPIO_NUM    2   // Pin A1
 
@@ -83,10 +83,10 @@ void setup() {
   config.pin_reset = RESET_GPIO_NUM;
   
   // 10MHz is a good balance for USB streaming
-  config.xclk_freq_hz = 5000000; 
+  config.xclk_freq_hz = 10000000; 
   
   config.frame_size = FRAMESIZE_QVGA;
-  config.pixel_format = PIXFORMAT_GRAYSCALE; 
+  config.pixel_format = PIXFORMAT_YUV422; 
   config.grab_mode = CAMERA_GRAB_LATEST;
   config.fb_location = CAMERA_FB_IN_PSRAM; // Back to PSRAM (safer default on S3)
   config.jpeg_quality = 12;
@@ -101,7 +101,6 @@ void setup() {
 
   sensor_t * s = esp_camera_sensor_get();
   if (s != NULL) {
-    //s->set_colorbar(s,1);
     s->set_aec2(s, 0);      // Disable Auto Exposure
     s->set_ae_level(s, 0); // Manual Exposure Level
   }
