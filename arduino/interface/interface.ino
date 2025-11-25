@@ -53,6 +53,8 @@
 #define HREF_GPIO_NUM    1   // Pin A0
 #define PCLK_GPIO_NUM    2   // Pin A1
 
+#define THRESHOLD_VAL 127
+
 void setup() {
   WRITE_PERI_REG(RTC_CNTL_BROWN_OUT_REG, 0); 
   
@@ -99,11 +101,11 @@ void setup() {
     return;
   }
 
-  sensor_t * s = esp_camera_sensor_get();
-  if (s != NULL) {
-    s->set_aec2(s, 0);      // Disable Auto Exposure
-    s->set_ae_level(s, 0); // Manual Exposure Level
-  }
+  // sensor_t * s = esp_camera_sensor_get();
+  // if (s != NULL) {
+  //   s->set_aec2(s, 0);      // Disable Auto Exposure
+  //   s->set_ae_level(s, 0); // Manual Exposure Level
+  // }
 }
 
 void loop() {
@@ -111,9 +113,16 @@ void loop() {
   camera_fb_t * fb = esp_camera_fb_get();
   if (!fb) {
     // If capture fails, send a text error so Python sees it
-    Serial.println("ERROR: Capture failed");
-    delay(100);
+    delay(10);
     return;
+  }
+
+  // --- THRESHOLDING ---
+  size_t len = fb->len;
+  uint8_t *buf = fb->buf;
+  for (size_t i = 0; i < len; i++) {
+    if (buf[i] > THRESHOLD_VAL) buf[i] = 255;
+    else buf[i] = 0;
   }
 
   // 2. Convert to JPEG
