@@ -54,7 +54,7 @@ module camera_capture_threshold (
     reg in_frame;                   // Currently capturing frame
     
     // Threshold comparison (combinational output)
-    assign wr_data = (data_d1 > threshold);
+    assign wr_data = (data_d1 >= threshold);
    
     // Capture and threshold logic
     always @(posedge cam_pclk, negedge nreset) begin

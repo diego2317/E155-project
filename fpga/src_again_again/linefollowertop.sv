@@ -50,7 +50,7 @@ module camera_line_follower_top (
     wire cam_frame_done;
     
     // Fixed threshold 
-    localparam [7:0] THRESHOLD = 8'd250; 
+    localparam [7:0] THRESHOLD = 8'd251; 
    
     camera_capture_threshold cam_cap (
         .cam_pclk(cam_pclk),
