@@ -25,8 +25,10 @@ module camera_line_follower_top (
     // 3. Frame Ready Line (Output - Toggles on new frame)
     output wire mcu_frame_ready,
 
-    // Debug / LEDs (Optional)
-    output wire led_frame_indicator // Toggles with frame ready
+    // Debug / LEDs
+    output wire led_frame_indicator, // Toggles with frame ready
+    output wire led_cam_active,      // High when camera is capturing
+    output wire led_write_active     // Pulses on SPRAM writes
 );
 
     // ------------------------------------------------------------------------
@@ -42,19 +44,47 @@ module camera_line_follower_top (
     assign clk_48mhz = int_osc;
    
     // ------------------------------------------------------------------------
+    // Reset Synchronization (Recommended for multi-clock designs)
+    // ------------------------------------------------------------------------
+    // Async assert, sync deassert for each clock domain
+    
+    // System domain reset synchronizer
+    reg [2:0] sys_reset_sync;
+    wire sys_nreset;
+    always @(posedge clk_48mhz or negedge nreset) begin
+        if (!nreset)
+            sys_reset_sync <= 3'b000;
+        else
+            sys_reset_sync <= {sys_reset_sync[1:0], 1'b1};
+    end
+    assign sys_nreset = sys_reset_sync[2];
+    
+    // Camera domain reset synchronizer
+    reg [2:0] cam_reset_sync;
+    wire cam_nreset;
+    always @(posedge cam_pclk or negedge nreset) begin
+        if (!nreset)
+            cam_reset_sync <= 3'b000;
+        else
+            cam_reset_sync <= {cam_reset_sync[1:0], 1'b1};
+    end
+    assign cam_nreset = cam_reset_sync[2];
+   
+    // ------------------------------------------------------------------------
     // Threshold Processing (Camera Domain)
     // ------------------------------------------------------------------------
     wire [16:0] cam_wr_addr;
     wire cam_wr_data;
     wire cam_wr_en;
     wire cam_frame_done;
+    wire cam_in_frame;              // Add this signal for LED
     
     // Fixed threshold 
     localparam [7:0] THRESHOLD = 8'd250; 
    
     camera_capture_threshold cam_cap (
         .cam_pclk(cam_pclk),
-        .nreset(nreset),
+        .nreset(cam_nreset),        // Use synchronized reset
         .cam_vsync(cam_vsync),
         .cam_href(cam_href),
         .cam_data(cam_data),
@@ -63,7 +93,7 @@ module camera_line_follower_top (
         .wr_data(cam_wr_data),
         .wr_en(cam_wr_en),
         .frame_done(cam_frame_done),
-        .in_frame() // Unused here
+        .in_frame(cam_in_frame)     // Connect for LED debug
     );
 
     // ------------------------------------------------------------------------
@@ -73,7 +103,7 @@ module camera_line_follower_top (
     frame_buffer_spram framebuffer (
         // Write Side (Camera)
         .w_clk(cam_pclk),
-        .w_rst_n(nreset),
+        .w_rst_n(cam_nreset),       // Use synchronized reset (same domain as w_clk)
         .w_en(cam_wr_en),
         .w_addr_pixel(cam_wr_addr),
         .w_data_bit(cam_wr_data),
@@ -87,5 +117,41 @@ module camera_line_follower_top (
     );
 
     assign led_frame_indicator = mcu_frame_ready;
+
+    // ------------------------------------------------------------------------
+    // Debug LED Logic
+    // ------------------------------------------------------------------------
+    
+    // LED 1: Frame ready indicator (already assigned above)
+    
+    // LED 2: Camera active - shows when camera is capturing a frame
+    assign led_cam_active = cam_in_frame;
+    
+    // LED 3: Write activity - CDC from camera domain to system domain for LED
+    reg [2:0] wr_en_sync;
+    reg led_wr_pulse;
+    reg [15:0] wr_pulse_stretch;  // Stretch pulse so it's visible
+    
+    always @(posedge clk_48mhz or negedge sys_nreset) begin
+        if (!sys_nreset) begin
+            wr_en_sync <= 3'b000;
+            led_wr_pulse <= 1'b0;
+            wr_pulse_stretch <= 16'd0;
+        end else begin
+            // Synchronize write enable to system clock
+            wr_en_sync <= {wr_en_sync[1:0], cam_wr_en};
+            
+            // Detect edge
+            if (wr_en_sync[2:1] == 2'b01) begin
+                wr_pulse_stretch <= 16'hFFFF;  // Start stretch counter
+            end else if (wr_pulse_stretch != 16'd0) begin
+                wr_pulse_stretch <= wr_pulse_stretch - 1'b1;
+            end
+            
+            led_wr_pulse <= (wr_pulse_stretch != 16'd0);
+        end
+    end
+    
+    assign led_write_active = led_wr_pulse;
 
 endmodule
