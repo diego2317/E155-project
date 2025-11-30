@@ -43,7 +43,7 @@ int main(void)
     printf("Starting XCLK (10MHz on PA11)...\n");
     XCLK_Init();
     HAL_Delay(300);  
-    OV7670_Init_QVGA();
+    //OV7670_Init_QVGA();
     HAL_Delay(300);
     uint8_t pid, ver;
     if (OV7670_ReadReg(0x0A, &pid) == HAL_OK && OV7670_ReadReg(0x0B, &ver) == HAL_OK) {
@@ -69,10 +69,12 @@ int main(void)
        
         uint32_t capture_time = HAL_GetTick() - start_time;
         if (pixel_count >= 76000) {
-            printf("Frame captured! %d pixels in %d ms\r\n\r\n", pixel_count, capture_time); 
+            //printf("Frame captured! %d pixels in %d ms\r\n\r\n", pixel_count, capture_time); 
             // Analyze and display results
-            visualize_image_compact();
+            //visualize_image_compact();
             //visualize_image_line_stats();
+            image_to_file();
+            //determine_direction();
             HAL_GPIO_WritePin(GPIOB, GPIO_PIN_3, 1);
         } else {
             //printf("Capture Error: Only received %d pixels.\r\n", pixel_count);
