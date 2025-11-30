@@ -38,9 +38,9 @@ void visualize_image_compact(void)
     uint16_t start_row = 100;
     uint16_t end_row = 200;
    
-    for (uint16_t y = start_row; y < end_row; y += 3) {
+    for (uint16_t y = 0; y < IMAGE_HEIGHT; y += 1) {
         printf("%3d: ", y);
-        for (uint16_t x = 0; x < IMAGE_WIDTH; x += 2) {
+        for (uint16_t x = 0; x < IMAGE_WIDTH; x += 1) {
             uint8_t pixel = get_pixel(x, y);
             printf("%c", pixel ? ' ' : '#');
         }
