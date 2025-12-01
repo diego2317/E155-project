@@ -38,7 +38,7 @@ int main(void)
     printf("STM32 Camera Config & Capture\r\n");
     printf("Image: %dx%d (1-bit bitmask)\r\n", IMAGE_WIDTH, IMAGE_HEIGHT);
     printf("=================================\r\n\r\n");
-   
+    
     // 1. Configure Camera
     printf("Starting XCLK (10MHz on PA11)...\n");
     XCLK_Init();
@@ -77,23 +77,25 @@ int main(void)
             // Analyze and display results
             //HAL_Delay(500);
             black_pixels = visualize_image_compact();
-            for (int i = 3; i >0; --i) {
-              avg[i+1] = avg[i];
-            }
-            avg[0] = black_pixels;
-            for (int i = 0; i < 5; ++i) {
-              thresh +=avg[i];
-            }
-            thresh /= 5;
-            if (black_pixels >= 70000) {
-              printf("BLACK\n");
-              HAL_GPIO_WritePin(GPIOA, GPIO_PIN_9, 1);
-            } else if (black_pixels >= 40000 && black_pixels <= 54000){
+            printf("%d\n", black_pixels);
+            //for (int i = 3; i >0; --i) {
+            //  avg[i+1] = avg[i];
+            //}
+            //avg[0] = black_pixels;
+            //for (int i = 0; i < 5; ++i) {
+            //  thresh +=avg[i];
+            //}
+            //thresh /= 5;
+            if (black_pixels > 72000) {
               printf("WHITE\n");
+              HAL_GPIO_WritePin(GPIOA, GPIO_PIN_9, 1);
+            } else if (black_pixels < 68000){
+              printf("BLACK\n");
               HAL_GPIO_WritePin(GPIOA, GPIO_PIN_9, 0);
             } else {
-              HAL_GPIO_WritePin(GPIOA, GPIO_PIN_9, 1);
+            //  //HAL_GPIO_WritePin(GPIOA, GPIO_PIN_9, 1);
             }
+            
             //toggle = 0;
             //visualize_image_line_stats();
             //image_to_file();
@@ -205,7 +207,7 @@ void GPIO_Capture_Init(void) {
     GPIO_InitTypeDef GPIO_InitStruc = {0};
     GPIO_InitStruc.Pin = GPIO_PIN_9;
     GPIO_InitStruc.Pull = GPIO_NOPULL;
-    GPIO_InitStruc.Mode = GPIO_MODE_OUTPUT_OD;
+    GPIO_InitStruc.Mode = GPIO_MODE_OUTPUT_PP;
     GPIO_InitStruc.Speed = GPIO_SPEED_FREQ_HIGH;
     HAL_GPIO_Init(GPIOA, &GPIO_InitStruc);
 
