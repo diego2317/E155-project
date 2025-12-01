@@ -86,10 +86,10 @@ int main(void)
             //  thresh +=avg[i];
             //}
             //thresh /= 5;
-            if (black_pixels > 72000) {
+            if (black_pixels < 56000) {
               //printf("WHITE\n");
               HAL_GPIO_WritePin(GPIOA, GPIO_PIN_9, 1);
-            } else if (black_pixels < 68000){
+            } else if (black_pixels > 56000){
               //printf("BLACK\n");
               HAL_GPIO_WritePin(GPIOA, GPIO_PIN_9, 0);
             } else {
