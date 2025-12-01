@@ -29,7 +29,7 @@ int main(void)
     SystemClock_Config();
    
     // Initialize peripherals
-    UART2_Init();
+    //UART2_Init();
     I2C1_Init();
     GPIO_Capture_Init();
     SPI1_Init();
@@ -47,15 +47,15 @@ int main(void)
     HAL_Delay(300);
     uint8_t pid, ver;
     if (OV7670_ReadReg(0x0A, &pid) == HAL_OK && OV7670_ReadReg(0x0B, &ver) == HAL_OK) {
-        printf("? Camera detected (PID=0x%02X, VER=0x%02X)\n\n", pid, ver);
+        //printf("? Camera detected (PID=0x%02X, VER=0x%02X)\n\n", pid, ver);
         if (OV7670_Init_QVGA() == 0) {
-            printf("? Configuration Success! Video streaming to FPGA.\r\n\r\n"); 
+            //printf("? Configuration Success! Video streaming to FPGA.\r\n\r\n"); 
         } else {
-            printf("? Configuration failed! Halting.\r\n");
+            //printf("? Configuration failed! Halting.\r\n");
             while(1);
         }
     } else {
-        printf("? Camera not responding! Halting.\r\n");
+        //printf("? Camera not responding! Halting.\r\n");
         while(1);
     }
    
@@ -77,7 +77,7 @@ int main(void)
             // Analyze and display results
             //HAL_Delay(500);
             black_pixels = visualize_image_compact();
-            printf("%d\n", black_pixels);
+            //printf("%d\n", black_pixels);
             //for (int i = 3; i >0; --i) {
             //  avg[i+1] = avg[i];
             //}
@@ -87,10 +87,10 @@ int main(void)
             //}
             //thresh /= 5;
             if (black_pixels > 72000) {
-              printf("WHITE\n");
+              //printf("WHITE\n");
               HAL_GPIO_WritePin(GPIOA, GPIO_PIN_9, 1);
             } else if (black_pixels < 68000){
-              printf("BLACK\n");
+              //printf("BLACK\n");
               HAL_GPIO_WritePin(GPIOA, GPIO_PIN_9, 0);
             } else {
             //  //HAL_GPIO_WritePin(GPIOA, GPIO_PIN_9, 1);
