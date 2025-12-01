@@ -17,37 +17,49 @@ uint8_t get_pixel(uint16_t x, uint16_t y)
 int16_t find_line_center(uint16_t row)
 {
     if (row >= IMAGE_HEIGHT) return -1;
-    int32_t sum_x = 0;
+    int32_t white_pixels_x = 0;
     int32_t pixel_weight = 0;
    
     for (uint16_t x = 0; x < IMAGE_WIDTH; x++) {
         if (get_pixel(x, row)) {
-            sum_x += x;
+            white_pixels_x += x;
             pixel_weight++;
         }
     }
    
     if (pixel_weight > 5) { 
-        return (int16_t)(sum_x / pixel_weight);
+        return (int16_t)(white_pixels_x / pixel_weight);
     }
     return -1;
 }
 
-void visualize_image_compact(void)
+int32_t visualize_image_compact(void)
 {
     //printf("=== COMPACT VIEW (Center Rows) ===\r\n\r\n");
     uint16_t start_row = 0;
     uint16_t end_row = IMAGE_HEIGHT;
-   
-    for (uint16_t y = start_row; y < end_row; y += 3) {
+    uint32_t white_pixels = 0;
+    uint32_t black_pixels = 0;
+    for (uint16_t y = start_row; y < end_row; y += 1) {
         //printf("%3d: ", y);
-        for (uint16_t x = 0; x < IMAGE_WIDTH; x += 2) {
+        for (uint16_t x = 0; x < IMAGE_WIDTH; x += 1) {
             uint8_t pixel = get_pixel(x, y);
-            printf("%c", pixel ? ' ' : '#');
+            white_pixels += pixel;
+            if(pixel == 0) black_pixels += 1;
+            //printf("%c", pixel ? ' ' : '#');
         }
-        printf("\r\n");
+       
+        //printf("\r\n");
     }
-    printf("\r\n");
+    if (black_pixels >= 70000) {
+      //printf("BLACK = %d\n", black_pixels);
+    }
+    if (white_pixels >= 40000 && white_pixels <= 54000) {
+      //printf("WHITE = %d\n", white_pixels);
+    }
+    
+    return black_pixels;
+    //printf("\r\n");
 }
 
 void visualize_image_line_stats(void)

@@ -60,28 +60,49 @@ int main(void)
     }
    
     // 2. Continuous Capture Loop 
+    int avg[5];
+    int thresh = 0;
     while (1)
     {
         //printf("Waiting for next frame...\r\n");
         uint32_t start_time = HAL_GetTick();
-       
+        int32_t black_pixels = 0;
         capture_frame_spi();
        
         uint32_t capture_time = HAL_GetTick() - start_time;
+        uint8_t toggle = 0;
         if (pixel_count >= 76000) {
+            thresh = 0;
             //printf("Frame captured! %d pixels in %d ms\r\n\r\n", pixel_count, capture_time); 
             // Analyze and display results
-            visualize_image_compact();
+            //HAL_Delay(500);
+            black_pixels = visualize_image_compact();
+            for (int i = 3; i >0; --i) {
+              avg[i+1] = avg[i];
+            }
+            avg[0] = black_pixels;
+            for (int i = 0; i < 5; ++i) {
+              thresh +=avg[i];
+            }
+            thresh /= 5;
+            if (black_pixels >= 70000) {
+              printf("BLACK\n");
+              HAL_GPIO_WritePin(GPIOA, GPIO_PIN_9, 1);
+            } else if (black_pixels >= 40000 && black_pixels <= 54000){
+              printf("WHITE\n");
+              HAL_GPIO_WritePin(GPIOA, GPIO_PIN_9, 0);
+            } else {
+              HAL_GPIO_WritePin(GPIOA, GPIO_PIN_9, 1);
+            }
+            //toggle = 0;
             //visualize_image_line_stats();
             //image_to_file();
             //determine_direction();
-            HAL_GPIO_WritePin(GPIOB, GPIO_PIN_3, 1);
-        } else {
-            //printf("Capture Error: Only received %d pixels.\r\n", pixel_count);
-            HAL_GPIO_WritePin(GPIOB, GPIO_PIN_3, 0);
-        }
-       
-        //HAL_Delay(500);
+            HAL_GPIO_TogglePin(GPIOB, GPIO_PIN_3);
+        } //else {
+        //    //printf("Capture Error: Only received %d pixels.\r\n", pixel_count);
+        //    //HAL_GPIO_WritePin(GPIOB, GPIO_PIN_3, 0);
+        //}
     }
 }
 
@@ -181,12 +202,12 @@ void GPIO_Capture_Init(void) {
     GPIO_InitStruct.Pull = GPIO_PULLDOWN; // Keep lines low if FPGA is disconnected
     GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_VERY_HIGH;
     HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
-    //GPIO_InitTypeDef GPIO_InitStruc = {0};
-    //GPIO_InitStruc.Pin = GPIO_PIN_3;
-    //GPIO_InitStruc.Pull = GPIO_NOPULL;
-    //GPIO_InitStruc.Mode = GPIO_MODE_OUTPUT_PP;
-    //GPIO_InitStruc.Speed = GPIO_SPEED_FREQ_HIGH;
-    //HAL_GPIO_Init(GPIOB, &GPIO_InitStruc);
+    GPIO_InitTypeDef GPIO_InitStruc = {0};
+    GPIO_InitStruc.Pin = GPIO_PIN_9;
+    GPIO_InitStruc.Pull = GPIO_NOPULL;
+    GPIO_InitStruc.Mode = GPIO_MODE_OUTPUT_OD;
+    GPIO_InitStruc.Speed = GPIO_SPEED_FREQ_HIGH;
+    HAL_GPIO_Init(GPIOA, &GPIO_InitStruc);
 
 }
 

@@ -7,7 +7,7 @@
 
 uint8_t get_pixel(uint16_t x, uint16_t y);
 int16_t find_line_center(uint16_t row);
-void visualize_image_compact(void);
+int32_t visualize_image_compact(void);
 void visualize_image_line_stats(void);
 void image_to_file(void);
 

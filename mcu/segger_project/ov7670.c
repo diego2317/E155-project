@@ -32,17 +32,19 @@ static const camera_reg ov7670_qvga_yuv[] = {
     {0x8C, 0x00, 10, "RGB444 disable"},
     {0x04, 0x00, 10, "COM1"},
     {0x40, 0xC0, 10, "COM15"},
-    {0x14, 0x48, 10, "COM9"},
-    {0x4F, 0x80, 10, "MTX1"},
-    {0x50, 0x80, 10, "MTX2"},
-    {0x51, 0x00, 10, "MTX3"},
-    {0x52, 0x22, 10, "MTX4"},
-    {0x53, 0x5E, 10, "MTX5"},
-    {0x54, 0x80, 10, "MTX6"},
-    {0x58, 0x9E, 10, "MTXS"},
+    {0x14, 0x49, 10, "COM9"},
+    //{0x4F, 0x80, 10, "MTX1"},
+    //{0x50, 0x80, 10, "MTX2"},
+    //{0x51, 0x00, 10, "MTX3"},
+    //{0x52, 0x22, 10, "MTX4"},
+    //{0x53, 0x5E, 10, "MTX5"},
+    //{0x54, 0x80, 10, "MTX6"},
+    //{0x58, 0x9E, 10, "MTXS"},
     
     // Add COM8 for auto-exposure/gain
-    {0x13, 0x8F, 20, "COM8: AGC+AEC+AWB"},
+    //{0x13, 0x8F, 20, "COM8: AGC+AEC+AWB"},
+    {0x13, 0x00, 20, "COM8: Everything off"}, 
+
     
     // Confirm QVGA mode one more time at the end
     {0x12, 0x10, 100, "COM7: Confirm QVGA"},
