@@ -35,13 +35,13 @@ int16_t find_line_center(uint16_t row)
 
 void visualize_image_compact(void)
 {
-    printf("=== COMPACT VIEW (Center Rows) ===\r\n\r\n");
+    //printf("=== COMPACT VIEW (Center Rows) ===\r\n\r\n");
     uint16_t start_row = 0;
     uint16_t end_row = IMAGE_HEIGHT;
    
-    for (uint16_t y = start_row; y < end_row; y += 1) {
-        printf("%3d: ", y);
-        for (uint16_t x = 0; x < IMAGE_WIDTH; x += 1) {
+    for (uint16_t y = start_row; y < end_row; y += 3) {
+        //printf("%3d: ", y);
+        for (uint16_t x = 0; x < IMAGE_WIDTH; x += 2) {
             uint8_t pixel = get_pixel(x, y);
             printf("%c", pixel ? ' ' : '#');
         }

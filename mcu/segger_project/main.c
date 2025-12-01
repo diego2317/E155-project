@@ -71,9 +71,9 @@ int main(void)
         if (pixel_count >= 76000) {
             //printf("Frame captured! %d pixels in %d ms\r\n\r\n", pixel_count, capture_time); 
             // Analyze and display results
-            //visualize_image_compact();
+            visualize_image_compact();
             //visualize_image_line_stats();
-            image_to_file();
+            //image_to_file();
             //determine_direction();
             HAL_GPIO_WritePin(GPIOB, GPIO_PIN_3, 1);
         } else {
