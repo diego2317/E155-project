@@ -78,14 +78,14 @@ int main(void)
             // Analyze and display results
             //HAL_Delay(500);
             black_pixels = visualize_image_compact();
-            printf("%d\n", black_pixels);
+            //printf("%d\n", black_pixels);
             
-            if (black_pixels <= 38000) {
+            if (black_pixels <= 45000) {
               // Black
               //printf("BLACK");
               prev = 1;
               HAL_GPIO_WritePin(GPIOA, GPIO_PIN_9, 0);
-            } else if (black_pixels > 38000){
+            } else if (black_pixels > 45000){
               // White
               //printf("WHITE");
               HAL_GPIO_WritePin(GPIOA, GPIO_PIN_9, 1);
