@@ -328,7 +328,7 @@ void LPTIM2_PWM_Init(void)
     
     // Set CMP (Compare Register) - defines duty cycle
     // For 10% duty cycle: CMP = 0.1 * 1000 = 100
-    LPTIM2->CMP = 169;  // 100/1000 = 10% duty cycle
+    LPTIM2->CMP = 499;  // 100/1000 = 10% duty cycle
     
     // Start continuous mode
     LPTIM2->CR |= LPTIM_CR_CNTSTRT;
