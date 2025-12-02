@@ -68,7 +68,7 @@ int main(void)
     {
         ////printf("Waiting for next frame...\r\n");
         uint32_t start_time = HAL_GetTick();
-        int32_t black_pixels = 0;
+        uint32_t black_pixels = 0;
         capture_frame_spi();
        
         uint32_t capture_time = HAL_GetTick() - start_time;
@@ -79,6 +79,7 @@ int main(void)
             // Analyze and display results
             //HAL_Delay(500);
             black_pixels = visualize_image_compact();
+            //printf("%d\n", black_pixels);
             if (black_pixels >= 60000) {
               // Black
               //printf("BLACK");
@@ -122,12 +123,12 @@ void XCLK_Init(void) {
     htim1.Instance = TIM1;
     htim1.Init.Prescaler = 0;
     htim1.Init.CounterMode = TIM_COUNTERMODE_UP;
-    htim1.Init.Period = 7; // For 10MHz XCLK @ 80MHz SYSCLK
+    htim1.Init.Period = 3; // For 10MHz XCLK @ 80MHz SYSCLK
     htim1.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
     HAL_TIM_PWM_Init(&htim1);
 
     sConfigOC.OCMode = TIM_OCMODE_PWM1;
-    sConfigOC.Pulse = 4; // 50% duty cycle
+    sConfigOC.Pulse = 2; // 50% duty cycle
     sConfigOC.OCPolarity = TIM_OCPOLARITY_HIGH;
     HAL_TIM_PWM_ConfigChannel(&htim1, &sConfigOC, TIM_CHANNEL_4);
 
