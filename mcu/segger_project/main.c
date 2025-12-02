@@ -20,6 +20,7 @@ void XCLK_Init(void);
 void GPIO_Capture_Init(void);
 void SPI1_Init(void);
 static void SPI1_GPIO_Init(void);
+void LPTIM2_PWM_Init(void);
 
 volatile bool spi_rx_error = false;
 
@@ -42,6 +43,7 @@ int main(void)
     // 1. Configure Camera
     //printf("Starting XCLK (10MHz on PA11)...\n");
     XCLK_Init();
+    LPTIM2_PWM_Init();
     HAL_Delay(300);  
     //OV7670_Init_QVGA();
     HAL_Delay(300);
@@ -279,4 +281,54 @@ void Error_Handler(void) {
 int _write(int file, char *ptr, int len) {
     HAL_UART_Transmit(&huart2, (uint8_t*)ptr, len, 1000);
     return len;
+}
+
+void LPTIM2_PWM_Init(void)
+{
+    // Enable clocks
+    RCC->AHB2ENR |= RCC_AHB2ENR_GPIOAEN;     // Enable GPIOA clock
+    RCC->APB1ENR2 |= RCC_APB1ENR2_LPTIM2EN;  // Enable LPTIM2 clock
+    
+    // Configure PA8 as alternate function (AF14 for LPTIM2_OUT)
+    GPIOA->MODER &= ~GPIO_MODER_MODE8_Msk;   // Clear mode bits
+    GPIOA->MODER |= (0x2 << GPIO_MODER_MODE8_Pos); // Set to alternate function mode
+    
+    GPIOA->OTYPER &= ~GPIO_OTYPER_OT8;       // Output push-pull
+    GPIOA->OSPEEDR |= GPIO_OSPEEDR_OSPEED8;  // High speed
+    GPIOA->PUPDR &= ~GPIO_PUPDR_PUPD8_Msk;   // No pull-up/pull-down
+    
+    // Set alternate function AF14 for PA8 (LPTIM2_OUT)
+    GPIOA->AFR[1] &= ~GPIO_AFRH_AFSEL8_Msk;  // Clear AF bits
+    GPIOA->AFR[1] |= (14 << GPIO_AFRH_AFSEL8_Pos); // AF14
+    
+    // Configure LPTIM2
+    // Select LSI as clock source (if using LSI, ~32kHz)
+    // Or use PCLK for higher frequency
+    RCC->CCIPR |= (0x0 << RCC_CCIPR_LPTIM2SEL_Pos); // PCLK as clock source
+    
+    // Disable LPTIM2 before configuration
+    LPTIM2->CR &= ~LPTIM_CR_ENABLE;
+    
+    // Configure LPTIM2 in PWM mode
+    // Set prescaler: /1 (no division)
+    LPTIM2->CFGR &= ~LPTIM_CFGR_PRESC_Msk;
+    LPTIM2->CFGR |= (0x0 << LPTIM_CFGR_PRESC_Pos); // Prescaler /1
+    
+    // Configure wave polarity and mode
+    LPTIM2->CFGR &= ~LPTIM_CFGR_WAVPOL;      // PWM mode, output high when CNT < CMP
+    LPTIM2->CFGR &= ~LPTIM_CFGR_PRELOAD;     // Registers updated immediately
+    
+    // Enable LPTIM2
+    LPTIM2->CR |= LPTIM_CR_ENABLE;
+    
+    // Set ARR (Auto-Reload Register) - defines PWM period
+    // For example: ARR = 999 gives 1000 counts (0-999)
+    LPTIM2->ARR = 999;
+    
+    // Set CMP (Compare Register) - defines duty cycle
+    // For 10% duty cycle: CMP = 0.1 * 1000 = 100
+    LPTIM2->CMP = 499;  // 100/1000 = 10% duty cycle
+    
+    // Start continuous mode
+    LPTIM2->CR |= LPTIM_CR_CNTSTRT;
 }
