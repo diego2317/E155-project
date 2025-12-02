@@ -321,7 +321,7 @@ void LPTIM2_PWM_Init(void)
     LPTIM2->CFGR |= (0x0 << LPTIM_CFGR_PRESC_Pos); // Prescaler /1
     
     // Configure wave polarity and mode
-    LPTIM2->CFGR &= ~LPTIM_CFGR_WAVPOL;      // PWM mode, output high when CNT < CMP
+    LPTIM2->CFGR |= LPTIM_CFGR_WAVPOL;      // PWM mode, output high when CNT < CMP
     LPTIM2->CFGR &= ~LPTIM_CFGR_PRELOAD;     // Registers updated immediately
     
     // Enable LPTIM2
