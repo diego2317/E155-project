@@ -315,7 +315,7 @@ void LPTIM2_PWM_Init(void)
     LPTIM2->CFGR |= (0x0 << LPTIM_CFGR_PRESC_Pos); // Prescaler /1
     
     // Configure wave polarity and mode
-    LPTIM2->CFGR &= ~LPTIM_CFGR_WAVPOL;      // PWM mode, output high when CNT < CMP
+    LPTIM2->CFGR |= LPTIM_CFGR_WAVPOL;      // PWM mode, output high when CNT < CMP
     LPTIM2->CFGR &= ~LPTIM_CFGR_PRELOAD;     // Registers updated immediately
     
     // Enable LPTIM2
@@ -327,7 +327,7 @@ void LPTIM2_PWM_Init(void)
     
     // Set CMP (Compare Register) - defines duty cycle
     // For 10% duty cycle: CMP = 0.1 * 1000 = 100
-    LPTIM2->CMP = 459;  // 100/1000 = 10% duty cycle
+    LPTIM2->CMP = 169;  // 100/1000 = 10% duty cycle
     
     // Start continuous mode
     LPTIM2->CR |= LPTIM_CR_CNTSTRT;
