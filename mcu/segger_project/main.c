@@ -63,7 +63,7 @@ int main(void)
    
     // 2. Continuous Capture Loop 
     int avg[5];
-    int thresh = 0;
+    int prev = 0;
     while (1)
     {
         ////printf("Waiting for next frame...\r\n");
@@ -74,20 +74,25 @@ int main(void)
         uint32_t capture_time = HAL_GetTick() - start_time;
         uint8_t toggle = 0;
         if (pixel_count >= 76000) {
-            thresh = 0;
             ////printf("Frame captured! %d pixels in %d ms\r\n\r\n", pixel_count, capture_time); 
             // Analyze and display results
             //HAL_Delay(500);
             black_pixels = visualize_image_compact();
-            //printf("%d\n", black_pixels);
-            if (black_pixels >= 55000) {
+            printf("%d\n", black_pixels);
+            if (prev < 3) {
+              prev++;
+            } else if (prev == 3) {
+            if (black_pixels <= 38000) {
               // Black
               //printf("BLACK");
+              prev = 1;
               HAL_GPIO_WritePin(GPIOA, GPIO_PIN_9, 0);
-            } else if (black_pixels <= 55000){
+            } else if (black_pixels > 38000){
               // White
               //printf("WHITE");
               HAL_GPIO_WritePin(GPIOA, GPIO_PIN_9, 1);
+            }
+            prev = 0;
             }
             //toggle = 0;
             //visualize_image_line_stats();
@@ -328,7 +333,7 @@ void LPTIM2_PWM_Init(void)
     
     // Set CMP (Compare Register) - defines duty cycle
     // For 10% duty cycle: CMP = 0.1 * 1000 = 100
-    LPTIM2->CMP = 499;  // 100/1000 = 10% duty cycle
+    LPTIM2->CMP = 469;  // 100/1000 = 10% duty cycle
     
     // Start continuous mode
     LPTIM2->CR |= LPTIM_CR_CNTSTRT;
