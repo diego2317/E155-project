@@ -21,6 +21,7 @@ void GPIO_Capture_Init(void);
 void SPI1_Init(void);
 static void SPI1_GPIO_Init(void);
 void LPTIM2_PWM_Init(void);
+void check_reset(void);
 
 
 volatile bool spi_rx_error = false;
@@ -29,7 +30,8 @@ int main(void)
 {
     HAL_Init();
     SystemClock_Config();
-   
+    check_reset();
+
     // Initialize peripherals
     //UART2_Init();
     I2C1_Init();
@@ -333,7 +335,7 @@ void LPTIM2_PWM_Init(void)
     
     // Set CMP (Compare Register) - defines duty cycle
     // For 10% duty cycle: CMP = 0.1 * 1000 = 100
-    LPTIM2->CMP = 499;  // 100/1000 = 10% duty cycle
+    LPTIM2->CMP = 169;  // 170/1000 = 17% duty cycle
     
     // Start continuous mode
     LPTIM2->CR |= LPTIM_CR_CNTSTRT;
@@ -347,4 +349,19 @@ void Error_Handler(void) {
 int _write(int file, char *ptr, int len) {
     HAL_UART_Transmit(&huart2, (uint8_t*)ptr, len, 1000);
     return len;
+}
+
+void check_reset(void) {
+  /* Check if the reset was triggered by software (i.e., we already reset ourselves) */
+  if (__HAL_RCC_GET_FLAG(RCC_FLAG_SFTRST))
+  {
+      /* We have already performed the software reset. Clear flags and proceed. */
+      __HAL_RCC_CLEAR_RESET_FLAGS();
+  }
+  else
+  {
+      /* This is the first power-up (Power-On Reset or Pin Reset). 
+         Trigger a Software Reset now. */
+      NVIC_SystemReset(); 
+  }
 }
