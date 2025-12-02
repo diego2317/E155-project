@@ -21,14 +21,14 @@ void GPIO_Capture_Init(void);
 void SPI1_Init(void);
 static void SPI1_GPIO_Init(void);
 void LPTIM2_PWM_Init(void);
-
+void check_reset(void);
 volatile bool spi_rx_error = false;
 
 int main(void)
 {
     HAL_Init();
     SystemClock_Config();
-   
+    check_reset();
     // Initialize peripherals
     //UART2_Init();
     I2C1_Init();
@@ -331,4 +331,20 @@ void LPTIM2_PWM_Init(void)
     
     // Start continuous mode
     LPTIM2->CR |= LPTIM_CR_CNTSTRT;
+}
+
+
+void check_reset(void) {
+  /* Check if the reset was triggered by software (i.e., we already reset ourselves) */
+  if (__HAL_RCC_GET_FLAG(RCC_FLAG_SFTRST))
+  {
+      /* We have already performed the software reset. Clear flags and proceed. */
+      __HAL_RCC_CLEAR_RESET_FLAGS();
+  }
+  else
+  {
+      /* This is the first power-up (Power-On Reset or Pin Reset). 
+         Trigger a Software Reset now. */
+      NVIC_SystemReset(); 
+  }
 }
