@@ -29,33 +29,33 @@ int main(void)
     SystemClock_Config();
    
     // Initialize peripherals
-    UART2_Init();
+    //UART2_Init();
     I2C1_Init();
     GPIO_Capture_Init();
     SPI1_Init();
    
-    printf("\r\n=================================\r\n");
-    printf("STM32 Camera Config & Capture\r\n");
-    printf("Image: %dx%d (1-bit bitmask)\r\n", IMAGE_WIDTH, IMAGE_HEIGHT);
-    printf("=================================\r\n\r\n");
+    //printf("\r\n=================================\r\n");
+    //printf("STM32 Camera Config & Capture\r\n");
+    //printf("Image: %dx%d (1-bit bitmask)\r\n", IMAGE_WIDTH, IMAGE_HEIGHT);
+    //printf("=================================\r\n\r\n");
    
     // 1. Configure Camera
-    printf("Starting XCLK (10MHz on PA11)...\n");
+    //printf("Starting XCLK (10MHz on PA11)...\n");
     XCLK_Init();
     HAL_Delay(300);  
     //OV7670_Init_QVGA();
     HAL_Delay(300);
     uint8_t pid, ver;
     if (OV7670_ReadReg(0x0A, &pid) == HAL_OK && OV7670_ReadReg(0x0B, &ver) == HAL_OK) {
-        printf("? Camera detected (PID=0x%02X, VER=0x%02X)\n\n", pid, ver);
+        //printf("? Camera detected (PID=0x%02X, VER=0x%02X)\n\n", pid, ver);
         if (OV7670_Init_QVGA() == 0) {
-            printf("? Configuration Success! Video streaming to FPGA.\r\n\r\n"); 
+            //printf("? Configuration Success! Video streaming to FPGA.\r\n\r\n"); 
         } else {
-            printf("? Configuration failed! Halting.\r\n");
+            //printf("? Configuration failed! Halting.\r\n");
             while(1);
         }
     } else {
-        printf("? Camera not responding! Halting.\r\n");
+        //printf("? Camera not responding! Halting.\r\n");
         while(1);
     }
    
@@ -64,7 +64,7 @@ int main(void)
     int thresh = 0;
     while (1)
     {
-        //printf("Waiting for next frame...\r\n");
+        ////printf("Waiting for next frame...\r\n");
         uint32_t start_time = HAL_GetTick();
         int32_t black_pixels = 0;
         capture_frame_spi();
@@ -73,25 +73,17 @@ int main(void)
         uint8_t toggle = 0;
         if (pixel_count >= 76000) {
             thresh = 0;
-            //printf("Frame captured! %d pixels in %d ms\r\n\r\n", pixel_count, capture_time); 
+            ////printf("Frame captured! %d pixels in %d ms\r\n\r\n", pixel_count, capture_time); 
             // Analyze and display results
             //HAL_Delay(500);
             black_pixels = visualize_image_compact();
-            for (int i = 3; i >0; --i) {
-              avg[i+1] = avg[i];
-            }
-            avg[0] = black_pixels;
-            for (int i = 0; i < 5; ++i) {
-              thresh +=avg[i];
-            }
-            thresh /= 5;
-            if (black_pixels >= 70000) {
-              printf("BLACK\n");
-              HAL_GPIO_WritePin(GPIOA, GPIO_PIN_9, 1);
-            } else if (black_pixels >= 40000 && black_pixels <= 54000){
-              printf("WHITE\n");
+            if (black_pixels >= 60000) {
+              // Black
+              //printf("BLACK");
               HAL_GPIO_WritePin(GPIOA, GPIO_PIN_9, 0);
-            } else {
+            } else if (black_pixels <= 60000){
+              // White
+              //printf("WHITE");
               HAL_GPIO_WritePin(GPIOA, GPIO_PIN_9, 1);
             }
             //toggle = 0;
@@ -100,7 +92,7 @@ int main(void)
             //determine_direction();
             HAL_GPIO_TogglePin(GPIOB, GPIO_PIN_3);
         } //else {
-        //    //printf("Capture Error: Only received %d pixels.\r\n", pixel_count);
+        //    ////printf("Capture Error: Only received %d pixels.\r\n", pixel_count);
         //    //HAL_GPIO_WritePin(GPIOB, GPIO_PIN_3, 0);
         //}
     }
@@ -205,7 +197,7 @@ void GPIO_Capture_Init(void) {
     GPIO_InitTypeDef GPIO_InitStruc = {0};
     GPIO_InitStruc.Pin = GPIO_PIN_9;
     GPIO_InitStruc.Pull = GPIO_NOPULL;
-    GPIO_InitStruc.Mode = GPIO_MODE_OUTPUT_OD;
+    GPIO_InitStruc.Mode = GPIO_MODE_OUTPUT_PP;
     GPIO_InitStruc.Speed = GPIO_SPEED_FREQ_HIGH;
     HAL_GPIO_Init(GPIOA, &GPIO_InitStruc);
 

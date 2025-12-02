@@ -35,56 +35,56 @@ int16_t find_line_center(uint16_t row)
 
 int32_t visualize_image_compact(void)
 {
-    //printf("=== COMPACT VIEW (Center Rows) ===\r\n\r\n");
+    ////printf("=== COMPACT VIEW (Center Rows) ===\r\n\r\n");
     uint16_t start_row = 0;
     uint16_t end_row = IMAGE_HEIGHT;
     uint32_t white_pixels = 0;
     uint32_t black_pixels = 0;
     for (uint16_t y = start_row; y < end_row; y += 1) {
-        //printf("%3d: ", y);
+        ////printf("%3d: ", y);
         for (uint16_t x = 0; x < IMAGE_WIDTH; x += 1) {
             uint8_t pixel = get_pixel(x, y);
             white_pixels += pixel;
             if(pixel == 0) black_pixels += 1;
-            //printf("%c", pixel ? ' ' : '#');
+            ////printf("%c", pixel ? ' ' : '#');
         }
        
-        //printf("\r\n");
+        ////printf("\r\n");
     }
-    if (black_pixels >= 70000) {
-      //printf("BLACK = %d\n", black_pixels);
-    }
-    if (white_pixels >= 40000 && white_pixels <= 54000) {
-      //printf("WHITE = %d\n", white_pixels);
-    }
-    
+    //if (black_pixels >= 70000) {
+    //  ////printf("BLACK = %d\n", black_pixels);
+    //}
+    //if (white_pixels >= 40000 && white_pixels <= 54000) {
+    //  ////printf("WHITE = %d\n", white_pixels);
+    //}
+    //printf("%d\n", black_pixels);
     return black_pixels;
-    //printf("\r\n");
+    ////printf("\r\n");
 }
 
 void visualize_image_line_stats(void)
 {
-    printf("=== LINE DETECTION STATS ===\r\n\r\n");
+    //printf("=== LINE DETECTION STATS ===\r\n\r\n");
     uint16_t test_rows[] = {150, 200, 230};
     for (int i = 0; i < 3; i++) {
         uint16_t row = test_rows[i];
         int16_t center = find_line_center(row);
        
-        printf("Row %3d: ", row);
+        //printf("Row %3d: ", row);
         if (center >= 0) {
             int16_t error = center - (IMAGE_WIDTH / 2);
-            printf("Line Center X=%3d | Error=%4d\r\n", center, error);
-            printf("         [---L---(C)-R---]\r\n");
+            //printf("Line Center X=%3d | Error=%4d\r\n", center, error);
+            //printf("         [---L---(C)-R---]\r\n");
             if (error < 0) {
-              printf("Turn RIGHT");
+              //printf("Turn RIGHT");
             } else if (error > 0) {
-              printf("Turn LEFT");
+              //printf("Turn LEFT");
             }
         } else {
-            printf("NO LINE DETECTED\r\n");
+            //printf("NO LINE DETECTED\r\n");
         }
     }
-    printf("\r\n");
+    //printf("\r\n");
 }
 void image_to_file(void)
 {
@@ -95,8 +95,8 @@ void image_to_file(void)
 
     // 2. Send PBM Header
     char header[64];
-    int len = snprintf(header, sizeof(header), "P1\n%d %d\n", IMAGE_WIDTH, IMAGE_HEIGHT);
-    SEGGER_RTT_Write(0, header, len);
+    //int len = snprintf(header, sizeof(header), "P1\n%d %d\n", IMAGE_WIDTH, IMAGE_HEIGHT);
+    //SEGGER_RTT_Write(0, header, len);
 
     // 3. Send Image Data (Row by Row)
     // Buffer size: 320 * 2 chars + newline + null terminator = 642
@@ -109,7 +109,7 @@ void image_to_file(void)
         {
             uint8_t pixel = get_pixel(x, y);
             
-            // Unrolling this slightly manually to avoid sprintf overhead in the inner loop
+            // Unrolling this slightly manually to avoid s//printf overhead in the inner loop
             line_buffer[pos++] = pixel ? '1' : '0';
             line_buffer[pos++] = ' ';
         }
@@ -148,28 +148,28 @@ void determine_direction(void) {
     // Check if we found a line in enough rows to make a reliable decision
     // Requiring at least 10% of rows to have a line prevents noise triggers
     if (valid_rows < (IMAGE_HEIGHT / 10)) {
-        printf("STOP - No Line Detected\r\n");
+        //printf("STOP - No Line Detected\r\n");
         return;
     }
 
     // Calculate the average error across the entire image
     int32_t average_error = total_error / valid_rows;
 
-    printf("Avg Error: %d | ", average_error);
+    //printf("Avg Error: %d | ", average_error);
 
     // Decision Logic
     if (average_error < -FORWARD_THRESHOLD) {
         // Line is to the left (negative error)
         // Using your existing logic: Error < 0 -> Turn RIGHT
-        printf("Turn RIGHT\r\n");
+        //printf("Turn RIGHT\r\n");
     } 
     else if (average_error > FORWARD_THRESHOLD) {
         // Line is to the right (positive error)
         // Using your existing logic: Error > 0 -> Turn LEFT
-        printf("Turn LEFT\r\n");
+        //printf("Turn LEFT\r\n");
     } 
     else {
         // Error is within the threshold
-        printf("Go FORWARD\r\n");
+        //printf("Go FORWARD\r\n");
     }
 }

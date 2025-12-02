@@ -79,7 +79,7 @@ void capture_frame(void)
 
 void capture_frame_spi(void)
 {
-
+    memset(image_buffer, 0, IMAGE_SIZE_BYTES);
     uint8_t *p_buffer = image_buffer;
     const uint8_t *p_end = image_buffer + IMAGE_SIZE_BYTES;
     
