@@ -79,9 +79,7 @@ int main(void)
             //HAL_Delay(500);
             black_pixels = visualize_image_compact();
             printf("%d\n", black_pixels);
-            if (prev < 3) {
-              prev++;
-            } else if (prev == 3) {
+            
             if (black_pixels <= 38000) {
               // Black
               //printf("BLACK");
@@ -92,8 +90,7 @@ int main(void)
               //printf("WHITE");
               HAL_GPIO_WritePin(GPIOA, GPIO_PIN_9, 1);
             }
-            prev = 0;
-            }
+           
             //toggle = 0;
             //visualize_image_line_stats();
             //image_to_file();
