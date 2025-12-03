@@ -20,66 +20,86 @@ void XCLK_Init(void);
 void GPIO_Capture_Init(void);
 void SPI1_Init(void);
 static void SPI1_GPIO_Init(void);
-
+void LPTIM2_PWM_Init(void);
+void check_reset(void);
 volatile bool spi_rx_error = false;
 
 int main(void)
 {
     HAL_Init();
     SystemClock_Config();
-   
+    check_reset();
     // Initialize peripherals
-    UART2_Init();
+    //UART2_Init();
     I2C1_Init();
     GPIO_Capture_Init();
     SPI1_Init();
    
-    printf("\r\n=================================\r\n");
-    printf("STM32 Camera Config & Capture\r\n");
-    printf("Image: %dx%d (1-bit bitmask)\r\n", IMAGE_WIDTH, IMAGE_HEIGHT);
-    printf("=================================\r\n\r\n");
+    //printf("\r\n=================================\r\n");
+    //printf("STM32 Camera Config & Capture\r\n");
+    //printf("Image: %dx%d (1-bit bitmask)\r\n", IMAGE_WIDTH, IMAGE_HEIGHT);
+    //printf("=================================\r\n\r\n");
    
     // 1. Configure Camera
-    printf("Starting XCLK (10MHz on PA11)...\n");
+    //printf("Starting XCLK (10MHz on PA11)...\n");
     XCLK_Init();
+    LPTIM2_PWM_Init();
     HAL_Delay(300);  
-    OV7670_Init_QVGA();
-    HAL_Delay(300);
+    
+    
     uint8_t pid, ver;
-    if (OV7670_ReadReg(0x0A, &pid) == HAL_OK && OV7670_ReadReg(0x0B, &ver) == HAL_OK) {
-        printf("? Camera detected (PID=0x%02X, VER=0x%02X)\n\n", pid, ver);
-        if (OV7670_Init_QVGA() == 0) {
-            printf("? Configuration Success! Video streaming to FPGA.\r\n\r\n"); 
-        } else {
-            printf("? Configuration failed! Halting.\r\n");
-            while(1);
+    if (OV7670_ReadReg(0x0A, &pid) == HAL_OK) {
+        if (OV7670_Init_QVGA() != 0) {
+            // Error handling: Blink rapidly
+            while(1) { HAL_GPIO_TogglePin(GPIOB, GPIO_PIN_3); HAL_Delay(100); }
         }
-    } else {
-        printf("? Camera not responding! Halting.\r\n");
-        while(1);
     }
+    HAL_Delay(1000); 
    
     // 2. Continuous Capture Loop 
+    uint8_t black_frame_counter = 0; 
+    
+    // Thresholds
+    // Right: 25000
+    const uint32_t THRESHOLD_BLACK = 47000;
+    const uint32_t THRESHOLD_WHITE = 47000;
+
     while (1)
     {
-        //printf("Waiting for next frame...\r\n");
-        uint32_t start_time = HAL_GetTick();
-       
         capture_frame_spi();
-       
-        uint32_t capture_time = HAL_GetTick() - start_time;
+        
         if (pixel_count >= 76000) {
-            printf("Frame captured! %d pixels in %d ms\r\n\r\n", pixel_count, capture_time); 
-            // Analyze and display results
-            visualize_image_compact();
-            //visualize_image_line_stats();
-            HAL_GPIO_WritePin(GPIOB, GPIO_PIN_3, 1);
-        } else {
-            //printf("Capture Error: Only received %d pixels.\r\n", pixel_count);
-            HAL_GPIO_WritePin(GPIOB, GPIO_PIN_3, 0);
+            uint32_t black_pixels = visualize_image_compact();
+            
+            // --- LOGIC CORRECTION FOR SINGLE MOTOR DRIVER ---
+            // PA9 and PB5 are terminals for the SAME motor.
+            // FORWARD: PA9 = 1, PB5 = 0
+            // STOP:    PA9 = 0, PB5 = 0
+            //printf("%d\n", black_pixels);
+            if (black_pixels < THRESHOLD_BLACK) {
+                // === BLACK DETECTED (LINE) ===
+                black_frame_counter++;
+                
+                // Debounce
+               // if (black_frame_counter > 1) {
+                    // STOP the motor to let the other side pivot
+                    HAL_GPIO_WritePin(GPIOA, GPIO_PIN_9, 0); 
+                    HAL_GPIO_WritePin(GPIOB, GPIO_PIN_5, 0); 
+                    //HAL_Delay(500);
+               // }
+            } 
+            else if (black_pixels > THRESHOLD_WHITE) {
+                // === WHITE DETECTED (FLOOR) ===
+              //  black_frame_counter = 0;
+                
+                // DRIVE the motor Forward
+                HAL_GPIO_WritePin(GPIOA, GPIO_PIN_9, 1);
+                HAL_GPIO_WritePin(GPIOB, GPIO_PIN_5, 0);
+            }
+            
+            // Debug LED toggle
+            HAL_GPIO_TogglePin(GPIOB, GPIO_PIN_3);
         }
-       
-        //HAL_Delay(500);
     }
 }
 
@@ -179,12 +199,22 @@ void GPIO_Capture_Init(void) {
     GPIO_InitStruct.Pull = GPIO_PULLDOWN; // Keep lines low if FPGA is disconnected
     GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_VERY_HIGH;
     HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
-    //GPIO_InitTypeDef GPIO_InitStruc = {0};
-    //GPIO_InitStruc.Pin = GPIO_PIN_3;
-    //GPIO_InitStruc.Pull = GPIO_NOPULL;
-    //GPIO_InitStruc.Mode = GPIO_MODE_OUTPUT_PP;
-    //GPIO_InitStruc.Speed = GPIO_SPEED_FREQ_HIGH;
-    //HAL_GPIO_Init(GPIOB, &GPIO_InitStruc);
+
+    // Configure Motor driver GPIO
+    GPIO_InitTypeDef GPIO_InitStruc = {0};
+    GPIO_InitStruc.Pin = GPIO_PIN_9;
+    GPIO_InitStruc.Pull = GPIO_NOPULL;
+    GPIO_InitStruc.Mode = GPIO_MODE_OUTPUT_PP;
+    GPIO_InitStruc.Speed = GPIO_SPEED_FREQ_HIGH;
+    HAL_GPIO_Init(GPIOA, &GPIO_InitStruc);
+
+    // Configure Motor driver GPIO
+    GPIO_InitTypeDef GPIO_InitStru = {0};
+    GPIO_InitStru.Pin = GPIO_PIN_5;
+    GPIO_InitStru.Pull = GPIO_NOPULL;
+    GPIO_InitStru.Mode = GPIO_MODE_OUTPUT_PP;
+    GPIO_InitStru.Speed = GPIO_SPEED_FREQ_HIGH;
+    HAL_GPIO_Init(GPIOB, &GPIO_InitStru);
 
 }
 
@@ -264,4 +294,73 @@ void Error_Handler(void) {
 int _write(int file, char *ptr, int len) {
     HAL_UART_Transmit(&huart2, (uint8_t*)ptr, len, 1000);
     return len;
+}
+
+void LPTIM2_PWM_Init(void)
+{
+    // Enable clocks
+    RCC->AHB2ENR |= RCC_AHB2ENR_GPIOAEN;     // Enable GPIOA clock
+    RCC->APB1ENR2 |= RCC_APB1ENR2_LPTIM2EN;  // Enable LPTIM2 clock
+    
+    // Configure PA8 as alternate function (AF14 for LPTIM2_OUT)
+    GPIOA->MODER &= ~GPIO_MODER_MODE8_Msk;   // Clear mode bits
+    GPIOA->MODER |= (0x2 << GPIO_MODER_MODE8_Pos); // Set to alternate function mode
+    
+    GPIOA->OTYPER &= ~GPIO_OTYPER_OT8;       // Output push-pull
+    GPIOA->OSPEEDR |= GPIO_OSPEEDR_OSPEED8;  // High speed
+    GPIOA->PUPDR &= ~GPIO_PUPDR_PUPD8_Msk;   // No pull-up/pull-down
+    
+    // Set alternate function AF14 for PA8 (LPTIM2_OUT)
+    GPIOA->AFR[1] &= ~GPIO_AFRH_AFSEL8_Msk;  // Clear AF bits
+    GPIOA->AFR[1] |= (14 << GPIO_AFRH_AFSEL8_Pos); // AF14
+    
+    // Configure LPTIM2
+    // Select LSI as clock source (if using LSI, ~32kHz)
+    // Or use PCLK for higher frequency
+    RCC->CCIPR |= (0x0 << RCC_CCIPR_LPTIM2SEL_Pos); // PCLK as clock source
+    
+    // Disable LPTIM2 before configuration
+    LPTIM2->CR &= ~LPTIM_CR_ENABLE;
+    
+    // Configure LPTIM2 in PWM mode
+    // Set prescaler: /1 (no division)
+    LPTIM2->CFGR &= ~LPTIM_CFGR_PRESC_Msk;
+    LPTIM2->CFGR |= (0x0 << LPTIM_CFGR_PRESC_Pos); // Prescaler /1
+    
+    // Configure wave polarity and mode
+    LPTIM2->CFGR |= LPTIM_CFGR_WAVPOL;      // PWM mode, output high when CNT < 
+
+    LPTIM2->CFGR &= ~LPTIM_CFGR_PRELOAD;     // Registers updated immediately
+    
+    // Enable LPTIM2
+    LPTIM2->CR |= LPTIM_CR_ENABLE;
+    
+    // Set ARR (Auto-Reload Register) - defines PWM period
+    // For example: ARR = 999 gives 1000 counts (0-999)
+    LPTIM2->ARR = 999;
+    
+    // Set CMP (Compare Register) - defines duty cycle
+    // For 10% duty cycle: CMP = 0.1 * 1000 = 100
+    // Right: 499
+    // Left: 539
+    LPTIM2->CMP = 499;  // 100/1000 = 10% duty cycle
+    
+    // Start continuous mode
+    LPTIM2->CR |= LPTIM_CR_CNTSTRT;
+}
+
+
+void check_reset(void) {
+  /* Check if the reset was triggered by software (i.e., we already reset ourselves) */
+  if (__HAL_RCC_GET_FLAG(RCC_FLAG_SFTRST))
+  {
+      /* We have already performed the software reset. Clear flags and proceed. */
+      __HAL_RCC_CLEAR_RESET_FLAGS();
+  }
+  else
+  {
+      /* This is the first power-up (Power-On Reset or Pin Reset). 
+         Trigger a Software Reset now. */
+      NVIC_SystemReset(); 
+  }
 }

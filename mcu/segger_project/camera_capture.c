@@ -79,6 +79,7 @@ void capture_frame(void)
 
 void capture_frame_spi(void)
 {
+    memset(image_buffer, 0, IMAGE_SIZE_BYTES);
     uint8_t *p_buffer = image_buffer;
     const uint8_t *p_end = image_buffer + IMAGE_SIZE_BYTES;
     
@@ -89,10 +90,10 @@ void capture_frame_spi(void)
     
     // ADJUST THIS IF FRAME PIN IS NOT ON PORT A
     volatile uint32_t *GPIO_Frame_IDR = &(GPIOA->IDR); 
-
+    pixel_count = 0;
     // 2. Wait for FPGA to signal Ready (High)
     while (!(*GPIO_Frame_IDR & FRAME_ACTIVE_PIN));
-    pixel_count = 0;
+    
 
     // 3. Enable SPI (Starts Clock Generation immediately in RXONLY mode)
     // Note: We don't need to re-configure CR2/FRXTH because HAL_SPI_Init already did it.
