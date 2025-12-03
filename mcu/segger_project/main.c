@@ -23,6 +23,7 @@ static void SPI1_GPIO_Init(void);
 void LPTIM2_PWM_Init(void);
 void check_reset(void);
 volatile bool spi_rx_error = false;
+void Robot_Control(void);
 
 int main(void)
 {
@@ -55,52 +56,9 @@ int main(void)
         }
     }
     HAL_Delay(1000); 
-   
-    // 2. Continuous Capture Loop 
-    uint8_t black_frame_counter = 0; 
     
-    // Thresholds
-    // Right: 25000
-    const uint32_t THRESHOLD_BLACK = 47000;
-    const uint32_t THRESHOLD_WHITE = 47000;
-
-    while (1)
-    {
-        capture_frame_spi();
-        
-        if (pixel_count >= 76000) {
-            uint32_t black_pixels = visualize_image_compact();
-            
-            // --- LOGIC CORRECTION FOR SINGLE MOTOR DRIVER ---
-            // PA9 and PB5 are terminals for the SAME motor.
-            // FORWARD: PA9 = 1, PB5 = 0
-            // STOP:    PA9 = 0, PB5 = 0
-            //printf("%d\n", black_pixels);
-            if (black_pixels < THRESHOLD_BLACK) {
-                // === BLACK DETECTED (LINE) ===
-                black_frame_counter++;
-                
-                // Debounce
-               // if (black_frame_counter > 1) {
-                    // STOP the motor to let the other side pivot
-                    HAL_GPIO_WritePin(GPIOA, GPIO_PIN_9, 0); 
-                    HAL_GPIO_WritePin(GPIOB, GPIO_PIN_5, 0); 
-                    //HAL_Delay(500);
-               // }
-            } 
-            else if (black_pixels > THRESHOLD_WHITE) {
-                // === WHITE DETECTED (FLOOR) ===
-              //  black_frame_counter = 0;
-                
-                // DRIVE the motor Forward
-                HAL_GPIO_WritePin(GPIOA, GPIO_PIN_9, 1);
-                HAL_GPIO_WritePin(GPIOB, GPIO_PIN_5, 0);
-            }
-            
-            // Debug LED toggle
-            HAL_GPIO_TogglePin(GPIOB, GPIO_PIN_3);
-        }
-    }
+    //Control the robot on the line
+    Robot_Control();
 }
 
 // ============================================================================
@@ -363,4 +321,45 @@ void check_reset(void) {
          Trigger a Software Reset now. */
       NVIC_SystemReset(); 
   }
+}
+
+void Robot_Control(void) {
+while (1)
+    {
+        capture_frame_spi();
+        
+        if (pixel_count >= 76000) {
+            uint32_t black_pixels = visualize_image_compact();
+            
+            // --- LOGIC CORRECTION FOR SINGLE MOTOR DRIVER ---
+            // PA9 and PB5 are terminals for the SAME motor.
+            // FORWARD: PA9 = 1, PB5 = 0
+            // STOP:    PA9 = 0, PB5 = 0
+            //printf("%d\n", black_pixels);
+            if (black_pixels < THRESHOLD_BLACK) {
+                // === BLACK DETECTED (LINE) ===
+                black_frame_counter++;
+
+                    // STOP the motor to let the other side pivot
+                    HAL_GPIO_WritePin(GPIOA, GPIO_PIN_9, 0); 
+                    HAL_GPIO_WritePin(GPIOB, GPIO_PIN_5, 0); 
+
+            } 
+            else if (black_pixels > THRESHOLD_WHITE) {
+                // === WHITE DETECTED (FLOOR) ===
+              //  black_frame_counter = 0;
+                
+                // DRIVE the motor Forward
+                HAL_GPIO_WritePin(GPIOA, GPIO_PIN_9, 1);
+                HAL_GPIO_WritePin(GPIOB, GPIO_PIN_5, 0);
+            }
+            
+            // Debug LED toggle
+            HAL_GPIO_TogglePin(GPIOB, GPIO_PIN_3);
+        }
+    }
+
+
+
+
 }

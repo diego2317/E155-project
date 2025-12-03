@@ -28,4 +28,8 @@
 #define IMAGE_SIZE_BYTES   9600 // (320 * 240) / 8
 #define DMA_RAW_BUFFER_SIZE  2048
 
+// Thresholds
+#define THRESHOLD_BLACK = 47000;
+#define THRESHOLD_WHITE = 47000;
+
 #endif // CONFIG_H
