@@ -51,13 +51,6 @@ int32_t visualize_image_compact(void)
        
         ////printf("\r\n");
     }
-    //if (black_pixels >= 70000) {
-    //  ////printf("BLACK = %d\n", black_pixels);
-    //}
-    //if (white_pixels >= 40000 && white_pixels <= 54000) {
-    //  ////printf("WHITE = %d\n", white_pixels);
-    //}
-    //printf("%d\n", black_pixels);
     return black_pixels;
     ////printf("\r\n");
 }
