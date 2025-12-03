@@ -60,11 +60,10 @@ int main(void)
         printf("? Camera not responding! Halting.\r\n");
         while(1);
     }
-    //HAL_Delay(10000);
+    HAL_Delay(5000);
    
     // 2. Continuous Capture Loop 
-    int avg[5];
-    int prev = 0;
+    uint32_t black = 0;
     while (1)
     {
         ////printf("Waiting for next frame...\r\n");
@@ -85,12 +84,20 @@ int main(void)
             if (black_pixels < 47000) {
               // Black
               //printf("BLACK\n");
-              prev = 1;
-              HAL_GPIO_WritePin(GPIOA, GPIO_PIN_9, 0);
+              if (black == 0) {
+                HAL_GPIO_WritePin(GPIOA, GPIO_PIN_9, 0);
+                HAL_Delay(1);
+                HAL_GPIO_WritePin(GPIOA, GPIO_PIN_5, 1);
+                
+              } else if (black == 8) {
+                HAL_GPIO_WritePin(GPIOA, GPIO_PIN_5, 0);
+              }
+              black++;
             } else if (black_pixels > 47000){
               // White
               //printf("WHITE\n");
               HAL_GPIO_WritePin(GPIOA, GPIO_PIN_9, 1);
+              black = 0;
             }
            
             //toggle = 0;
@@ -201,12 +208,22 @@ void GPIO_Capture_Init(void) {
     GPIO_InitStruct.Pull = GPIO_PULLDOWN; // Keep lines low if FPGA is disconnected
     GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_VERY_HIGH;
     HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
+
+    // Configure Motor driver GPIO
     GPIO_InitTypeDef GPIO_InitStruc = {0};
     GPIO_InitStruc.Pin = GPIO_PIN_9;
     GPIO_InitStruc.Pull = GPIO_NOPULL;
     GPIO_InitStruc.Mode = GPIO_MODE_OUTPUT_PP;
     GPIO_InitStruc.Speed = GPIO_SPEED_FREQ_HIGH;
     HAL_GPIO_Init(GPIOA, &GPIO_InitStruc);
+
+    // Configure Motor driver GPIO
+    GPIO_InitTypeDef GPIO_InitStru = {0};
+    GPIO_InitStru.Pin = GPIO_PIN_5;
+    GPIO_InitStru.Pull = GPIO_NOPULL;
+    GPIO_InitStru.Mode = GPIO_MODE_OUTPUT_PP;
+    GPIO_InitStru.Speed = GPIO_SPEED_FREQ_HIGH;
+    HAL_GPIO_Init(GPIOB, &GPIO_InitStru);
 
 }
 
@@ -334,7 +351,7 @@ void LPTIM2_PWM_Init(void)
     // For 10% duty cycle: CMP = 0.1 * 1000 = 100
     // Right: 499
     // Left: 519
-    LPTIM2->CMP = 519;  // 100/1000 = 10% duty cycle
+    LPTIM2->CMP = 499;  // 100/1000 = 10% duty cycle
     
     // Start continuous mode
     LPTIM2->CR |= LPTIM_CR_CNTSTRT;
