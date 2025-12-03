@@ -45,70 +45,61 @@ int main(void)
     XCLK_Init();
     LPTIM2_PWM_Init();
     HAL_Delay(300);  
-    //OV7670_Init_QVGA();
-    HAL_Delay(300);
+    
+    
     uint8_t pid, ver;
-    if (OV7670_ReadReg(0x0A, &pid) == HAL_OK && OV7670_ReadReg(0x0B, &ver) == HAL_OK) {
-        //printf("? Camera detected (PID=0x%02X, VER=0x%02X)\n\n", pid, ver);
-        if (OV7670_Init_QVGA() == 0) {
-            printf("? Configuration Success! Video streaming to FPGA.\r\n\r\n"); 
-        } else {
-            printf("? Configuration failed! Halting.\r\n");
-            while(1);
+    if (OV7670_ReadReg(0x0A, &pid) == HAL_OK) {
+        if (OV7670_Init_QVGA() != 0) {
+            // Error handling: Blink rapidly
+            while(1) { HAL_GPIO_TogglePin(GPIOB, GPIO_PIN_3); HAL_Delay(100); }
         }
-    } else {
-        printf("? Camera not responding! Halting.\r\n");
-        while(1);
     }
-    HAL_Delay(5000);
+    HAL_Delay(1000); 
    
     // 2. Continuous Capture Loop 
-    uint32_t black = 0;
+    uint8_t black_frame_counter = 0; 
+    
+    // Thresholds
+    // Right: 25000
+    const uint32_t THRESHOLD_BLACK = 47000;
+    const uint32_t THRESHOLD_WHITE = 47000;
+
     while (1)
     {
-        ////printf("Waiting for next frame...\r\n");
-        uint32_t start_time = HAL_GetTick();
-        uint32_t black_pixels = 0;
         capture_frame_spi();
-       
-        uint32_t capture_time = HAL_GetTick() - start_time;
-        uint8_t toggle = 0;
+        
         if (pixel_count >= 76000) {
-            ////printf("Frame captured! %d pixels in %d ms\r\n\r\n", pixel_count, capture_time); 
-            // Analyze and display results
-            //HAL_Delay(500);
-            black_pixels = visualize_image_compact();
+            uint32_t black_pixels = visualize_image_compact();
+            
+            // --- LOGIC CORRECTION FOR SINGLE MOTOR DRIVER ---
+            // PA9 and PB5 are terminals for the SAME motor.
+            // FORWARD: PA9 = 1, PB5 = 0
+            // STOP:    PA9 = 0, PB5 = 0
             printf("%d\n", black_pixels);
-            // <47000 for right
-            // <47000 for left
-            if (black_pixels < 47000) {
-              // Black
-              //printf("BLACK\n");
-              if (black == 0) {
-                HAL_GPIO_WritePin(GPIOA, GPIO_PIN_9, 0);
-                HAL_Delay(1);
-                HAL_GPIO_WritePin(GPIOA, GPIO_PIN_5, 1);
+            if (black_pixels < THRESHOLD_BLACK) {
+                // === BLACK DETECTED (LINE) ===
+                black_frame_counter++;
                 
-              } else if (black == 8) {
-                HAL_GPIO_WritePin(GPIOA, GPIO_PIN_5, 0);
-              }
-              black++;
-            } else if (black_pixels > 47000){
-              // White
-              //printf("WHITE\n");
-              HAL_GPIO_WritePin(GPIOA, GPIO_PIN_9, 1);
-              black = 0;
+                // Debounce
+               // if (black_frame_counter > 1) {
+                    // STOP the motor to let the other side pivot
+                    HAL_GPIO_WritePin(GPIOA, GPIO_PIN_9, 0); 
+                    HAL_GPIO_WritePin(GPIOB, GPIO_PIN_5, 0); 
+                    //HAL_Delay(500);
+               // }
+            } 
+            else if (black_pixels > THRESHOLD_WHITE) {
+                // === WHITE DETECTED (FLOOR) ===
+              //  black_frame_counter = 0;
+                
+                // DRIVE the motor Forward
+                HAL_GPIO_WritePin(GPIOA, GPIO_PIN_9, 1);
+                HAL_GPIO_WritePin(GPIOB, GPIO_PIN_5, 0);
             }
-           
-            //toggle = 0;
-            //visualize_image_line_stats();
-            //image_to_file();
-            //determine_direction();
+            
+            // Debug LED toggle
             HAL_GPIO_TogglePin(GPIOB, GPIO_PIN_3);
-        } //else {
-        //    ////printf("Capture Error: Only received %d pixels.\r\n", pixel_count);
-        //    //HAL_GPIO_WritePin(GPIOB, GPIO_PIN_3, 0);
-        //}
+        }
     }
 }
 
@@ -337,7 +328,8 @@ void LPTIM2_PWM_Init(void)
     LPTIM2->CFGR |= (0x0 << LPTIM_CFGR_PRESC_Pos); // Prescaler /1
     
     // Configure wave polarity and mode
-    LPTIM2->CFGR |= LPTIM_CFGR_WAVPOL;      // PWM mode, output high when CNT < CMP
+    LPTIM2->CFGR |= LPTIM_CFGR_WAVPOL;      // PWM mode, output high when CNT < 
+
     LPTIM2->CFGR &= ~LPTIM_CFGR_PRELOAD;     // Registers updated immediately
     
     // Enable LPTIM2
@@ -351,7 +343,7 @@ void LPTIM2_PWM_Init(void)
     // For 10% duty cycle: CMP = 0.1 * 1000 = 100
     // Right: 499
     // Left: 519
-    LPTIM2->CMP = 499;  // 100/1000 = 10% duty cycle
+    LPTIM2->CMP = 539;  // 100/1000 = 10% duty cycle
     
     // Start continuous mode
     LPTIM2->CR |= LPTIM_CR_CNTSTRT;
