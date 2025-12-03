@@ -7,13 +7,15 @@
 /* Frame buffer allocated in main.c */
 extern uint8_t frame_buffer[SPI_RX_BUFFER_BYTES];
 
-// YOUR QVGA CONFIG - FIXED (removed the duplicate COM7=0x00 write!)
 static const camera_reg ov7670_qvga_yuv[] = {
+    // --- RESET & CLOCK ---
     {0x12, 0x80, 500, "Reset"},
-    {0x11, 0x01, 20, "CLKRC: /1"}, // i changed it to divide by 1 from Ox01, to ox00
-    {0x12, 0x00, 100, "COM7: QVGA+YUV"},  // Set QVGA
+    {0x11, 0x01, 20, "CLKRC: /1"}, // Prescaler
+
+    // --- FORMATTING & SCALING ---
+    {0x12, 0x10, 100, "COM7: QVGA + YUV"}, // Set QVGA (Bit 4) and YUV (Bit 0=0)
     {0x0C, 0x04, 20, "COM3: Scaling"},
-    {0x3E, 0x19, 20, "COM14: PCLK scaling"}, // i changed this to ox00 from ox19
+    {0x3E, 0x19, 20, "COM14: PCLK scaling"},
     {0x32, 0x80, 10, "HREF"},
     {0x17, 0x16, 10, "HSTART"},
     {0x18, 0x04, 10, "HSTOP"},
@@ -27,31 +29,41 @@ static const camera_reg ov7670_qvga_yuv[] = {
     {0xA2, 0x02, 10, "PCLK_DELAY"},
     {0x15, 0x00, 10, "COM10"},
     {0x3A, 0x00, 10, "TSLB"},
-    {0x3D, 0x99, 10, "COM13"},
-    // REMOVED: {0x12, 0x00, 10, "COM7 again?"},  // <-- THIS WAS THE BUG!
+    {0x3D, 0x99, 10, "COM13"}, // Gamma enabled, U/V saturation
     {0x8C, 0x00, 10, "RGB444 disable"},
-    {0x04, 0x00, 10, "COM1"},
-    {0x40, 0xC0, 10, "COM15"},
-    {0x14, 0x49, 10, "COM9"},
-    //{0x4F, 0x80, 10, "MTX1"},
-    //{0x50, 0x80, 10, "MTX2"},
-    //{0x51, 0x00, 10, "MTX3"},
-    //{0x52, 0x22, 10, "MTX4"},
-    //{0x53, 0x5E, 10, "MTX5"},
-    //{0x54, 0x80, 10, "MTX6"},
-    //{0x58, 0x9E, 10, "MTXS"},
-    
-    // Add COM8 for auto-exposure/gain
-    //{0x13, 0x8F, 20, "COM8: AGC+AEC+AWB"},
-    {0x13, 0x00, 20, "COM8: Everything off"}, 
+    {0x40, 0xC0, 10, "COM15: [7:6]=11 (Full range 00-FF)"}, 
+    {0x14, 0x49, 10, "COM9: AGC Ceiling"},
 
+    // --- CRITICAL: DISABLE AUTO-MODES FIRST ---
+    // Disable AGC (Bit 2), AWB (Bit 1), AEC (Bit 0)
+    {0x13, 0x00, 20, "COM8: Everything OFF (Manual Mode)"}, 
+
+    // --- CONTRAST & EDGE ENHANCEMENT (For Binary Thresholding) ---
+    // High contrast stretches the histogram.
+    {0x56, 0x60, 10, "CONTR: High Contrast"}, 
+    // Edge enhancement makes the transition from black to white sharper.
+    // Factor range 0x00-0x1F. 0x04 is a moderate boost.
+    {0x3F, 0x04, 10, "EDGE: Edge Enhancement Factor"},
+
+    // --- MANUAL EXPOSURE BLOCK ---
+    // Adjust AECH (0x10) to shift the entire brightness up/down.
+    {0x04, 0x00, 10, "COM1: AEC Low bits"},       
+    {0x10, 0x40, 10, "AECH: Exposure Value"},     
+    {0x07, 0x00, 10, "AECHH: Exposure High bits"},
+
+    // --- MANUAL GAIN BLOCK ---
+    {0x00, 0x08, 10, "GAIN: Fixed Gain"},         
+
+    // --- MANUAL COLOR GAINS (Critical for Y Calculation) ---
+    // Y = 0.59G + 0.30R + 0.11B. 
+    // We set these high to ensure 'White' light generates a high Y value.
+    {0x01, 0x80, 10, "BLUE: Fixed Blue Gain"},    
+    {0x02, 0x80, 10, "RED: Fixed Red Gain"},      
+    {0x6A, 0x80, 10, "GGAIN: Fixed Green Gain"},  
     
-    // Confirm QVGA mode one more time at the end
-    {0x12, 0x10, 100, "COM7: Confirm QVGA"},
-    
+    // --- END ---
     {0xFF, 0xFF, 0, "End"}
 };
-
 // Provided configuration setup from implementation guide
 static const camera_reg ov7670_qvga_yuv_2[] = {
     {REG_COM7, COM7_RESET},  // Reset

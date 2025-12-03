@@ -41,7 +41,7 @@ int main(void)
     //printf("=================================\r\n\r\n");
    
     // 1. Configure Camera
-    //printf("Starting XCLK (10MHz on PA11)...\n");
+    printf("Starting XCLK (10MHz on PA11)...\n");
     XCLK_Init();
     LPTIM2_PWM_Init();
     HAL_Delay(300);  
@@ -51,15 +51,16 @@ int main(void)
     if (OV7670_ReadReg(0x0A, &pid) == HAL_OK && OV7670_ReadReg(0x0B, &ver) == HAL_OK) {
         //printf("? Camera detected (PID=0x%02X, VER=0x%02X)\n\n", pid, ver);
         if (OV7670_Init_QVGA() == 0) {
-            //printf("? Configuration Success! Video streaming to FPGA.\r\n\r\n"); 
+            printf("? Configuration Success! Video streaming to FPGA.\r\n\r\n"); 
         } else {
-            //printf("? Configuration failed! Halting.\r\n");
+            printf("? Configuration failed! Halting.\r\n");
             while(1);
         }
     } else {
-        //printf("? Camera not responding! Halting.\r\n");
+        printf("? Camera not responding! Halting.\r\n");
         while(1);
     }
+    //HAL_Delay(10000);
    
     // 2. Continuous Capture Loop 
     int avg[5];
@@ -78,16 +79,17 @@ int main(void)
             // Analyze and display results
             //HAL_Delay(500);
             black_pixels = visualize_image_compact();
-            //printf("%d\n", black_pixels);
-            
-            if (black_pixels <= 45000) {
+            printf("%d\n", black_pixels);
+            // <47000 for right
+            // <47000 for left
+            if (black_pixels < 47000) {
               // Black
-              //printf("BLACK");
+              //printf("BLACK\n");
               prev = 1;
               HAL_GPIO_WritePin(GPIOA, GPIO_PIN_9, 0);
-            } else if (black_pixels > 45000){
+            } else if (black_pixels > 47000){
               // White
-              //printf("WHITE");
+              //printf("WHITE\n");
               HAL_GPIO_WritePin(GPIOA, GPIO_PIN_9, 1);
             }
            
@@ -125,12 +127,12 @@ void XCLK_Init(void) {
     htim1.Instance = TIM1;
     htim1.Init.Prescaler = 0;
     htim1.Init.CounterMode = TIM_COUNTERMODE_UP;
-    htim1.Init.Period = 3; // For 10MHz XCLK @ 80MHz SYSCLK
+    htim1.Init.Period = 7; // For 10MHz XCLK @ 80MHz SYSCLK
     htim1.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
     HAL_TIM_PWM_Init(&htim1);
 
     sConfigOC.OCMode = TIM_OCMODE_PWM1;
-    sConfigOC.Pulse = 2; // 50% duty cycle
+    sConfigOC.Pulse = 4; // 50% duty cycle
     sConfigOC.OCPolarity = TIM_OCPOLARITY_HIGH;
     HAL_TIM_PWM_ConfigChannel(&htim1, &sConfigOC, TIM_CHANNEL_4);
 
@@ -330,7 +332,9 @@ void LPTIM2_PWM_Init(void)
     
     // Set CMP (Compare Register) - defines duty cycle
     // For 10% duty cycle: CMP = 0.1 * 1000 = 100
-    LPTIM2->CMP = 469;  // 100/1000 = 10% duty cycle
+    // Right: 499
+    // Left: 519
+    LPTIM2->CMP = 519;  // 100/1000 = 10% duty cycle
     
     // Start continuous mode
     LPTIM2->CR |= LPTIM_CR_CNTSTRT;
