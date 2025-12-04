@@ -10,7 +10,7 @@ extern uint8_t frame_buffer[SPI_RX_BUFFER_BYTES];
 static const camera_reg ov7670_qvga_yuv[] = {
     // --- RESET & CLOCK ---
     {0x12, 0x80, 500, "Reset"},
-    {0x11, 0x01, 20, "CLKRC: /1"}, // Prescaler
+    {0x11, 0x00, 20, "CLKRC: /1"}, // Prescaler
 
     // --- FORMATTING & SCALING ---
     {0x12, 0x10, 100, "COM7: QVGA + YUV"}, // Set QVGA (Bit 4) and YUV (Bit 0=0)

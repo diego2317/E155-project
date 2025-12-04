@@ -41,7 +41,7 @@ int main(void)
     //printf("=================================\r\n\r\n");
    
     // 1. Configure Camera
-    printf("Starting XCLK (10MHz on PA11)...\n");
+    //printf("Starting XCLK (10MHz on PA11)...\n");
     XCLK_Init();
     LPTIM2_PWM_Init();
     HAL_Delay(300);  
@@ -75,7 +75,7 @@ int main(void)
             // PA9 and PB5 are terminals for the SAME motor.
             // FORWARD: PA9 = 1, PB5 = 0
             // STOP:    PA9 = 0, PB5 = 0
-            printf("%d\n", black_pixels);
+            //printf("%d\n", black_pixels);
             if (black_pixels < THRESHOLD_BLACK) {
                 // === BLACK DETECTED (LINE) ===
                 black_frame_counter++;
@@ -342,8 +342,8 @@ void LPTIM2_PWM_Init(void)
     // Set CMP (Compare Register) - defines duty cycle
     // For 10% duty cycle: CMP = 0.1 * 1000 = 100
     // Right: 499
-    // Left: 519
-    LPTIM2->CMP = 539;  // 100/1000 = 10% duty cycle
+    // Left: 539
+    LPTIM2->CMP = 499;  // 100/1000 = 10% duty cycle
     
     // Start continuous mode
     LPTIM2->CR |= LPTIM_CR_CNTSTRT;
