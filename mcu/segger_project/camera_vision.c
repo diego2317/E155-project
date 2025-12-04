@@ -13,27 +13,7 @@ uint8_t get_pixel(uint16_t x, uint16_t y)
    return (image_buffer[byte_idx] >> bit_idx) & 0x01;
 }
 
-// Find center of line in given row (Centroid calculation)
-int16_t find_line_center(uint16_t row)
-{
-    if (row >= IMAGE_HEIGHT) return -1;
-    int32_t white_pixels_x = 0;
-    int32_t pixel_weight = 0;
-   
-    for (uint16_t x = 0; x < IMAGE_WIDTH; x++) {
-        if (get_pixel(x, row)) {
-            white_pixels_x += x;
-            pixel_weight++;
-        }
-    }
-   
-    if (pixel_weight > 5) { 
-        return (int16_t)(white_pixels_x / pixel_weight);
-    }
-    return -1;
-}
-
-int32_t visualize_image_compact(void)
+void visualize_image_compact(void)
 {
     ////printf("=== COMPACT VIEW (Center Rows) ===\r\n\r\n");
     uint16_t start_row = 0;
@@ -49,36 +29,11 @@ int32_t visualize_image_compact(void)
             ////printf("%c", pixel ? ' ' : '#');
         }
        
-        ////printf("\r\n");
     }
     return black_pixels;
-    ////printf("\r\n");
 }
 
-void visualize_image_line_stats(void)
-{
-    //printf("=== LINE DETECTION STATS ===\r\n\r\n");
-    uint16_t test_rows[] = {150, 200, 230};
-    for (int i = 0; i < 3; i++) {
-        uint16_t row = test_rows[i];
-        int16_t center = find_line_center(row);
-       
-        //printf("Row %3d: ", row);
-        if (center >= 0) {
-            int16_t error = center - (IMAGE_WIDTH / 2);
-            //printf("Line Center X=%3d | Error=%4d\r\n", center, error);
-            //printf("         [---L---(C)-R---]\r\n");
-            if (error < 0) {
-              //printf("Turn RIGHT");
-            } else if (error > 0) {
-              //printf("Turn LEFT");
-            }
-        } else {
-            //printf("NO LINE DETECTED\r\n");
-        }
-    }
-    //printf("\r\n");
-}
+
 void image_to_file(void)
 {
     // 1. CRITICAL: Enable Blocking Mode
@@ -116,53 +71,14 @@ void image_to_file(void)
     SEGGER_RTT_Write(0, "\n", 1);
 }
 
-// Scans the entire image and prints navigation direction
-void determine_direction(void) {
-    int32_t total_error = 0;
-    int32_t valid_rows = 0;
-    int16_t center_point = IMAGE_WIDTH / 2;
-    
-    // Threshold for going forward (deadband)
-    // If the line is within +/- 15 pixels of center, we go straight
-    const int16_t FORWARD_THRESHOLD = 15;
-
-    // Scan every row in the image
-    for (uint16_t y = 0; y < IMAGE_HEIGHT; y++) {
-        int16_t line_pos = find_line_center(y);
-        
-        if (line_pos != -1) {
-            // Calculate error for this row
-            int16_t error = line_pos - center_point;
-            total_error += error;
-            valid_rows++;
+uint32_t count_black_pixels(void) {
+    uint32_t black_pixels = IMAGE_HEIGHT * IMAGE_WIDTH;
+    // go through every byte
+    for (size_t i = 0; i < IMAGE_SIZE_BYTES; ++i) {
+        // check every bit in each byte
+        for (size_t j = 0; j < 8; ++j) {
+            black_pixels -= ((image_buffer[i] >> j) & 0x01);
         }
     }
-
-    // Check if we found a line in enough rows to make a reliable decision
-    // Requiring at least 10% of rows to have a line prevents noise triggers
-    if (valid_rows < (IMAGE_HEIGHT / 10)) {
-        //printf("STOP - No Line Detected\r\n");
-        return;
-    }
-
-    // Calculate the average error across the entire image
-    int32_t average_error = total_error / valid_rows;
-
-    //printf("Avg Error: %d | ", average_error);
-
-    // Decision Logic
-    if (average_error < -FORWARD_THRESHOLD) {
-        // Line is to the left (negative error)
-        // Using your existing logic: Error < 0 -> Turn RIGHT
-        //printf("Turn RIGHT\r\n");
-    } 
-    else if (average_error > FORWARD_THRESHOLD) {
-        // Line is to the right (positive error)
-        // Using your existing logic: Error > 0 -> Turn LEFT
-        //printf("Turn LEFT\r\n");
-    } 
-    else {
-        // Error is within the threshold
-        //printf("Go FORWARD\r\n");
-    }
+    return black_pixels;
 }

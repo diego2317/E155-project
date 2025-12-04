@@ -109,10 +109,6 @@ HAL_StatusTypeDef OV7670_WriteReg(uint8_t reg, uint8_t value) {
 
 // Initialize QVGA
 int OV7670_Init_QVGA(void) {
-    //printf("\n----------------------\n");
-    //printf("  Configuring OV7670: QVGA YUV422\n");
-    //printf("  Resolution: 320x240\n");
-    //printf("----------------------\n\n");
     
     int i = 0, success = 0, total = 0;
     

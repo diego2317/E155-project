@@ -30,24 +30,17 @@ int main(void)
     HAL_Init();
     SystemClock_Config();
     check_reset();
+    
     // Initialize peripherals
     //UART2_Init();
     I2C1_Init();
     GPIO_Capture_Init();
     SPI1_Init();
-   
-    //printf("\r\n=================================\r\n");
-    //printf("STM32 Camera Config & Capture\r\n");
-    //printf("Image: %dx%d (1-bit bitmask)\r\n", IMAGE_WIDTH, IMAGE_HEIGHT);
-    //printf("=================================\r\n\r\n");
-   
-    // 1. Configure Camera
-    //printf("Starting XCLK (10MHz on PA11)...\n");
     XCLK_Init();
     LPTIM2_PWM_Init();
     HAL_Delay(300);  
     
-    
+    // COnfigure camera
     uint8_t pid, ver;
     if (OV7670_ReadReg(0x0A, &pid) == HAL_OK) {
         if (OV7670_Init_QVGA() != 0) {
@@ -58,7 +51,9 @@ int main(void)
     HAL_Delay(1000); 
     
     //Control the robot on the line
-    Robot_Control();
+    while (1) {
+        Robot_Control();
+    }
 }
 
 // ============================================================================
@@ -324,42 +319,31 @@ void check_reset(void) {
 }
 
 void Robot_Control(void) {
-while (1)
-    {
-        capture_frame_spi();
+    capture_frame_spi();
+    
+    if (pixel_count >= 76000) {
+        uint32_t black_pixels = count_black_pixels();
         
-        if (pixel_count >= 76000) {
-            uint32_t black_pixels = visualize_image_compact();
-            
-            // --- LOGIC CORRECTION FOR SINGLE MOTOR DRIVER ---
-            // PA9 and PB5 are terminals for the SAME motor.
-            // FORWARD: PA9 = 1, PB5 = 0
-            // STOP:    PA9 = 0, PB5 = 0
-            //printf("%d\n", black_pixels);
-            if (black_pixels < THRESHOLD_BLACK) {
-                // === BLACK DETECTED (LINE) ===
-                black_frame_counter++;
+        // PA9 and PB5 are terminals for the SAME motor.
+        // FORWARD: PA9 = 1, PB5 = 0
+        // STOP:    PA9 = 0, PB5 = 0
+        if (black_pixels < THRESHOLD_BLACK) {
+            // === BLACK DETECTED (LINE) ===
+            black_frame_counter++;
 
-                    // STOP the motor to let the other side pivot
-                    HAL_GPIO_WritePin(GPIOA, GPIO_PIN_9, 0); 
-                    HAL_GPIO_WritePin(GPIOB, GPIO_PIN_5, 0); 
+                // STOP the motor to let the other side pivot
+                HAL_GPIO_WritePin(GPIOA, GPIO_PIN_9, 0); 
+                HAL_GPIO_WritePin(GPIOB, GPIO_PIN_5, 0); 
 
-            } 
-            else if (black_pixels > THRESHOLD_WHITE) {
-                // === WHITE DETECTED (FLOOR) ===
-              //  black_frame_counter = 0;
-                
-                // DRIVE the motor Forward
-                HAL_GPIO_WritePin(GPIOA, GPIO_PIN_9, 1);
-                HAL_GPIO_WritePin(GPIOB, GPIO_PIN_5, 0);
-            }
-            
-            // Debug LED toggle
-            HAL_GPIO_TogglePin(GPIOB, GPIO_PIN_3);
+        } 
+        else if (black_pixels > THRESHOLD_WHITE) {
+            // === WHITE DETECTED (FLOOR) ===
+            // DRIVE the motor Forward
+            HAL_GPIO_WritePin(GPIOA, GPIO_PIN_9, 1);
+            HAL_GPIO_WritePin(GPIOB, GPIO_PIN_5, 0);
         }
+        
+        // Debug LED toggle
+        HAL_GPIO_TogglePin(GPIOB, GPIO_PIN_3);
     }
-
-
-
-
 }

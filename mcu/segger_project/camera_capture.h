@@ -6,7 +6,7 @@
 #include <stdio.h>
 #include <string.h>
 
-// Shared data [cite: 3]
+// Shared data
 extern uint8_t image_buffer[IMAGE_SIZE_BYTES];
 extern volatile uint32_t pixel_count;
 
