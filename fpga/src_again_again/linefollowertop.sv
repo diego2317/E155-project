@@ -62,8 +62,7 @@ module camera_line_follower_top (
         .wr_addr(cam_wr_addr),
         .wr_data(cam_wr_data),
         .wr_en(cam_wr_en),
-        .frame_done(cam_frame_done),
-        .in_frame() // Unused here
+        .frame_done(cam_frame_done)
     );
 
     // ------------------------------------------------------------------------

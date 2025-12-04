@@ -1,1 +1,0 @@
-C:/lscc/radiant/2024.2/questasim/win64/VisualizerRls/bin/viscom.exe -nolock -quiet -jmem_size 393216 work.tb_spi_slave_camera -quiet -auto_acc_if_foreign -work work +acc -allow_unnamed -o _opt2 -id 1-00be43e570c5-691d3208-9b-3ed8 +__design_bin_path+C:/Users/dweiss/Documents/GitHub/E155-project/fpga/radiant_project/project +__betafsm

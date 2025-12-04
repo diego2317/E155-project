@@ -15,14 +15,14 @@ module camera_capture_threshold (
     output reg [16:0] wr_addr,      // Pixel address (0-76799 for 320x240)
     output wire wr_data,            // 1-bit bitmask (thresholded) - combinational
     output reg wr_en,               // Write enable
-    output reg frame_done,          // Pulse when frame complete
-    output reg in_frame             // Currently capturing frame
+    output reg frame_done          // Pulse when frame complete
 );
 
     // Pipeline register for camera signals
     reg vsync_d1;
     reg href_d1;
     reg [7:0] data_d1;
+	reg in_frame;
    
     always @(posedge cam_pclk, negedge nreset) begin
         if (!nreset) begin
