@@ -30,7 +30,7 @@ int main(void)
     HAL_Init();
     SystemClock_Config();
     check_reset();
-    
+
     // Initialize peripherals
     //UART2_Init();
     I2C1_Init();
@@ -44,8 +44,8 @@ int main(void)
     uint8_t pid, ver;
     if (OV7670_ReadReg(0x0A, &pid) == HAL_OK) {
         if (OV7670_Init_QVGA() != 0) {
-            // Error handling: Blink rapidly
-            while(1) { HAL_GPIO_TogglePin(GPIOB, GPIO_PIN_3); HAL_Delay(100); }
+            // Error handling: Reset
+            NVIC_SystemReset();
         }
     }
     HAL_Delay(1000); 
@@ -322,21 +322,20 @@ void Robot_Control(void) {
     capture_frame_spi();
     
     if (pixel_count >= 76000) {
-        uint32_t black_pixels = count_black_pixels();
+        uint32_t white_pixels = count_white_pixels();
         
         // PA9 and PB5 are terminals for the SAME motor.
         // FORWARD: PA9 = 1, PB5 = 0
         // STOP:    PA9 = 0, PB5 = 0
-        if (black_pixels < THRESHOLD_BLACK) {
+        if (white_pixels < THRESHOLD_BLACK) {
             // === BLACK DETECTED (LINE) ===
-            black_frame_counter++;
 
                 // STOP the motor to let the other side pivot
-                HAL_GPIO_WritePin(GPIOA, GPIO_PIN_9, 0); 
-                HAL_GPIO_WritePin(GPIOB, GPIO_PIN_5, 0); 
+            HAL_GPIO_WritePin(GPIOA, GPIO_PIN_9, 0); 
+            HAL_GPIO_WritePin(GPIOB, GPIO_PIN_5, 0); 
 
         } 
-        else if (black_pixels > THRESHOLD_WHITE) {
+        else if (white_pixels > THRESHOLD_WHITE) {
             // === WHITE DETECTED (FLOOR) ===
             // DRIVE the motor Forward
             HAL_GPIO_WritePin(GPIOA, GPIO_PIN_9, 1);

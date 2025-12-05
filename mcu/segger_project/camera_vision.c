@@ -18,19 +18,19 @@ void visualize_image_compact(void)
     ////printf("=== COMPACT VIEW (Center Rows) ===\r\n\r\n");
     uint16_t start_row = 0;
     uint16_t end_row = IMAGE_HEIGHT;
-    uint32_t white_pixels = 0;
     uint32_t black_pixels = 0;
+    uint32_t white_pixels = 0;
     for (uint16_t y = start_row; y < end_row; y += 1) {
         ////printf("%3d: ", y);
         for (uint16_t x = 0; x < IMAGE_WIDTH; x += 1) {
             uint8_t pixel = get_pixel(x, y);
-            white_pixels += pixel;
-            if(pixel == 0) black_pixels += 1;
+            black_pixels += pixel;
+            if(pixel == 0) white_pixels += 1;
             ////printf("%c", pixel ? ' ' : '#');
         }
        
     }
-    return black_pixels;
+    return white_pixels;
 }
 
 
@@ -71,14 +71,14 @@ void image_to_file(void)
     SEGGER_RTT_Write(0, "\n", 1);
 }
 
-uint32_t count_black_pixels(void) {
-    uint32_t black_pixels = IMAGE_HEIGHT * IMAGE_WIDTH;
+uint32_t count_white_pixels(void) {
+    uint32_t white_pixels = IMAGE_HEIGHT * IMAGE_WIDTH;
     // go through every byte
     for (size_t i = 0; i < IMAGE_SIZE_BYTES; ++i) {
         // check every bit in each byte
         for (size_t j = 0; j < 8; ++j) {
-            black_pixels -= ((image_buffer[i] >> j) & 0x01);
+            white_pixels -= ((image_buffer[i] >> j) & 0x01);
         }
     }
-    return black_pixels;
+    return white_pixels;
 }
