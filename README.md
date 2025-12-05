@@ -6,7 +6,6 @@ https://www.youtube.com/watch?v=vnzX3ZjI89I
 
 ## Table of Contents:
 
-Check out the other resources below: - 
 [FPGA Design](/fpga)
 Code for the FPGA implementation, including the camera pixel capture and bitmasking module, and the SPRAM frame buffer and SPI transfer module.
 
